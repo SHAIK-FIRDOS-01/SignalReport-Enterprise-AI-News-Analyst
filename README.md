@@ -59,6 +59,7 @@ Clone the Repository
 
 Bash
 git clone https://github.com/SHAIK-FIRDOS-01/SignalReport.git
+
 cd SignalReport
 
 
@@ -73,7 +74,7 @@ cd services/ai_ingestion
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-# Ensure GROQ_API_KEY and GNEWS_API_KEY are configured in your environment variables
+Ensure GROQ_API_KEY and GNEWS_API_KEY are configured in your environment variables
 uvicorn main:app --port 8001 --reload
    
 5. Initialize the Django Backend Server
