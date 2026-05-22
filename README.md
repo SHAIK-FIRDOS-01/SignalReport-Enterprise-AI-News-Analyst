@@ -1,98 +1,135 @@
-# 📰 SignalReport | Enterprise AI News Analyst
+<div align="center">
+
+# 📰 SignalReport
+### Enterprise AI News Analyst
+
+*An autonomous RAG pipeline that transforms high-volume global news into structured, actionable semantic intelligence — scaled via a decoupled microservices architecture to offload high-compute LLM operations and network-heavy ingestion.*
+
+---
 
 [![Llama 3.3](https://img.shields.io/badge/LLM-Llama_3.3-0467DF?style=for-the-badge&logo=meta)](https://llama.meta.com/)
 [![Groq](https://img.shields.io/badge/Inference-Groq-orange?style=for-the-badge)](https://groq.com/)
 [![Django](https://img.shields.io/badge/Django-6.0-092E20?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-📰 SignalReport | Enterprise AI News Analyst
-An autonomous RAG pipeline designed to transform high-volume global news into structured, actionable semantic intelligence. Now scaled using a decoupled microservices architecture to offload high-compute LLM operations and network-heavy ingestion.
+</div>
 
-🚀 Key Features
-Decoupled Microservices Architecture: Offloads CPU-intensive LLM inference and external API fetching from the core application framework into high-throughput microservices.
+---
 
-Autonomous RAG Pipeline: Dynamically queries, embeds, and processes global news using Llama 3.3 via Groq Inference for rapid semantic analysis.
+## 🚀 Key Features
 
-Asynchronous Ingestion via GNews API: Built-in asyncio loop with exponential backoff and custom fail-safes, maximizing pipeline durability during high-concurrency API stress.
+| Feature | Description |
+|---|---|
+| **Decoupled Microservices** | Offloads CPU-intensive LLM inference and external API fetching from the core application into high-throughput microservices |
+| **Autonomous RAG Pipeline** | Dynamically queries, embeds, and processes global news using Llama 3.3 via Groq for rapid semantic analysis |
+| **Async Ingestion** | `asyncio` loop with exponential backoff and custom fail-safes, maximizing pipeline durability during high-concurrency API stress |
+| **Real-Time NLP Engine** | Streamlined sentiment calculation and structured entity extraction — filters irrelevant noise by **30%** |
+| **Strict Schema Enforcement** | Native Pydantic v2 validation guarantees **100% data consistency** for automated glossary generation and downstream APIs |
+| **Enterprise Storage** | PostgreSQL data layer for optimal relational integrity, multi-tenant index tracking, and vector-ready compatibility |
+| **Glassmorphic Dashboard** | Premium React interface with Framer Motion micro-interactions, dynamic terminology tooltips, and contextual Q&A |
 
-Real-Time NLP Engine: Streamlined sentiment calculation and structured entity extraction, filtering irrelevant noise down by 30%.
+---
 
-Strict Schema Enforcement: Native Pydantic structural validation guarantees 100% data consistency for automated glossary generation and down-stream consuming APIs.
+## 🛠️ Technology Stack
 
-Enterprise Storage Foundation: Migrated data layer to PostgreSQL for optimal relational integrity, multi-tenant index tracking, and vector-ready compatibility.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         SignalReport                            │
+├───────────────────┬─────────────────────┬───────────────────────┤
+│  AI & Ingestion   │   Core Platform     │      Frontend         │
+│   (Microservice)  │  & Business Logic   │     Dashboard         │
+├───────────────────┼─────────────────────┼───────────────────────┤
+│  FastAPI          │  Django 6.0         │  React 19             │
+│  Llama 3.3        │  Django REST        │  Tailwind CSS v4      │
+│  Groq             │  Framework          │  Framer Motion        │
+│  GNews API        │                     │                       │
+│  Pydantic v2      │                     │                       │
+├───────────────────┴─────────────────────┴───────────────────────┤
+│                     Data Layer                                  │
+│              PostgreSQL (Relational Tracking & Analytics)       │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-Glassmorphic Intelligence Digest: Premium responsive React interface featuring smooth Framer Motion micro-interactions, dynamic terminology tooltips, and interactive contextual Q&A.
+---
 
-🛠️ Technology Stack
-AI & Ingestion Engine (Microservice): FastAPI, Llama 3.3, Groq, GNews API, Pydantic v2
+## 📂 Project Structure
 
-Core Web Platform & Business Logic: Django 6.0, Django REST Framework (DRF)
+```
+SignalReport/
+├── services/
+│   └── ai_ingestion/        # FastAPI microservice
+│                            # GNews processing, Groq LLM calls, NLP extraction
+├── backend/                 # Core Django application
+│                            # Auth, business logic, configs, dashboard APIs
+└── frontend/                # React dashboard
+                             # Glassmorphic intelligence interface
+```
 
-Frontend Dashboard: React 19, Tailwind CSS v4, Framer Motion
+---
 
-Data Layer: PostgreSQL (Relational Tracking & Analytics)
+## 🏁 Getting Started
 
-📂 Project Structure
-/services/ai_ingestion: FastAPI microservice responsible for GNews processing, Groq LLM calls, and NLP extraction.
+### Prerequisites
 
-/backend: Core Django application managing user authentication, business logic, system configurations, and dashboard API endpoints.
+- Python `3.12+`
+- Node.js `(Latest LTS)`
+- PostgreSQL `(Running instance)`
+- `GROQ_API_KEY`
+- `GNEWS_API_KEY`
 
-/frontend: High-fidelity glassmorphic intelligence dashboard.
+---
 
-🚀 Getting Started
-Prerequisites
-Python 3.12+
+### Installation & Setup
 
-Node.js (Latest LTS)
+#### 1. Clone the Repository
 
-PostgreSQL (Running instance)
-
-Groq API Key
-
-GNews API Key
-
-Installation & Setup
-Clone the Repository
-
-Bash
+```bash
 git clone https://github.com/SHAIK-FIRDOS-01/SignalReport.git
-
 cd SignalReport
+```
 
+#### 2. Configure the Storage Layer
 
-2. Configure the Storage Layer**
+Ensure your PostgreSQL instance is running, then create a database named `signalreport`. Add a `.env` file inside `/backend` with your database credentials.
 
-Ensure your PostgreSQL instance is running and create a database named signalreport. Create a configuration file (.env) in your /backend directory containing your database credentials.
+#### 3. Start the FastAPI Ingestion Microservice
 
-3. Start the FastAPI Ingestion Microservice**
-
-bash
+```bash
 cd services/ai_ingestion
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate       # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-Ensure GROQ_API_KEY and GNEWS_API_KEY are configured in your environment variables
-uvicorn main:app --port 8001 --reload
-   
-5. Initialize the Django Backend Server
 
-Bash
+# Set environment variables: GROQ_API_KEY and GNEWS_API_KEY
+uvicorn main:app --port 8001 --reload
+```
+
+#### 4. Initialize the Django Backend
+
+```bash
 cd ../../backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate       # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
+```
 
+#### 5. Launch the Frontend
 
-5. Launch the User Interface**
-
-bash
+```bash
 cd ../frontend
 npm install
 npm run dev
-   
-Built by Shaik Firdos
+```
+
+---
+
+<div align="center">
+
+Built by **Shaik Firdos**
+
+</div>
