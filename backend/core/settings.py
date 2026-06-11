@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-import pymysql
-pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,7 +29,7 @@ INSTALLED_APPS = [
     
     # Custom Apps
     'apps.accounts',
-    'apps.knowledge_base',
+    'apps.knowledge_base.apps.KnowledgeBaseConfig',
 ]
 
 MIDDLEWARE = [
@@ -71,16 +69,12 @@ ASGI_APPLICATION = 'core.asgi.application'
 # https://docs.djangoproject.com/en/stable/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'ai_news_db'),
-        'USER': os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'signalreport'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
         'HOST': os.getenv('DB_HOST', '127.0.0.1'),
-        'PORT': os.getenv('DB_PORT', '3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        }
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -150,3 +144,7 @@ if os.getenv('REDIS_URL'):
 
 # Rate Limiting
 RATELIMIT_USE_CACHE = 'default'
+
+# Microservice Configuration
+MICROSERVICE_URL = os.getenv('MICROSERVICE_URL', 'http://localhost:8001')
+

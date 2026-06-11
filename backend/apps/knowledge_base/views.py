@@ -34,19 +34,36 @@ class DashboardView(View):
             needs_ingestion = True
 
         if needs_ingestion:
-            from .tasks import full_system_ingestion
+            from .tasks import fast_ingest_and_save, background_scrape_all_pending
             
-            # Enterprise Pattern: Trigger background task without blocking the user
-            # In a Celery setup, this would be: full_system_ingestion.delay(is_historical=is_fresh_install)
-            def run_ingestion():
+            def run_ingestion_and_scraping():
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                loop.run_until_complete(full_system_ingestion(is_historical=is_fresh_install))
+                loop.run_until_complete(fast_ingest_and_save(is_historical=is_fresh_install))
+                loop.run_until_complete(background_scrape_all_pending())
                 loop.close()
-            
-            thread = threading.Thread(target=run_ingestion)
-            thread.daemon = True  # Ensure thread dies when main process dies
-            thread.start()
+                
+            if is_fresh_install:
+                # Synchronous on fresh install so first load is not empty
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(fast_ingest_and_save(is_historical=True))
+                loop.close()
+                
+                # Defer scraping in background
+                def run_background_scraping():
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    loop.run_until_complete(background_scrape_all_pending())
+                    loop.close()
+                thread = threading.Thread(target=run_background_scraping)
+                thread.daemon = True
+                thread.start()
+            else:
+                # Run ingestion and scraping entirely in background to avoid blocking the user
+                thread = threading.Thread(target=run_ingestion_and_scraping)
+                thread.daemon = True
+                thread.start()
 
         nodes = KnowledgeBaseNode.objects.all().order_by('-published_at')
         
@@ -55,17 +72,25 @@ class DashboardView(View):
         if category != 'All':
             nodes = nodes.filter(category__iexact=category)
             
+        # Geography filter
+        geography = request.GET.get('geography', 'All')
+        if geography != 'All':
+            nodes = nodes.filter(geography__iexact=geography)
+            
         data = [{
             'id': node.id,
             'title': node.title,
             'category': node.category,
+            'geography': node.geography,
             'content_raw': node.content_raw,
             'full_text_scraped': node.full_text_scraped,
             'content_processed': node.content_processed,
             'embedding_status': node.embedding_status,
+            'source_credibility_score': node.source_credibility_score,
             'published_at': node.published_at.isoformat() if node.published_at else None,
-            'source_url': node.source_url
-        } for node in nodes[:20]]
+            'source_url': node.source_url,
+            'image_url': node.image_url
+        } for node in nodes[:50]]
         return JsonResponse({'nodes': data})
 
 @method_decorator(require_jwt, name='dispatch')
@@ -157,3 +182,190 @@ class AskQuestionView(View):
             return JsonResponse({'status': 'success', 'answer': answer})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+class GNewsHeadlinesView(View):
+    """
+    Proxy endpoint for the GNews top-headlines service.
+    """
+    def get(self, request):
+        import httpx
+        from django.conf import settings
+        from django.utils import timezone
+        
+        base_url = getattr(settings, 'MICROSERVICE_URL', 'http://localhost:8001')
+        url = f"{base_url.rstrip('/')}/news/headlines"
+        
+        category = request.GET.get('category', 'general')
+        q = request.GET.get('q', None)
+        lang = request.GET.get('lang', None)
+        country = request.GET.get('country', None)
+        max_val = int(request.GET.get('max', 10))
+        from_date = request.GET.get('from', None)
+        to_date = request.GET.get('to', None)
+        nullable = request.GET.get('nullable', None)
+        
+        payload = {
+            "category": category,
+            "max_results": max_val
+        }
+        if q:
+            payload["query"] = q
+        if lang:
+            payload["lang"] = lang
+        if country:
+            payload["country"] = country
+        if from_date:
+            payload["from_date"] = from_date
+        if to_date:
+            payload["to_date"] = to_date
+        if nullable:
+            payload["nullable"] = nullable
+
+        requested_url = f"https://gnews.io/api/v4/top-headlines?category={category}&max={max_val}"
+        if q: requested_url += f"&q={q}"
+        if lang: requested_url += f"&lang={lang}"
+        if country: requested_url += f"&country={country}"
+        if from_date: requested_url += f"&from={from_date}"
+        if to_date: requested_url += f"&to={to_date}"
+        if nullable: requested_url += f"&nullable={nullable}"
+
+        try:
+            with httpx.Client() as client:
+                response = client.post(url, json=payload, timeout=30.0)
+                response.raise_for_status()
+                data = response.json()
+                articles = data.get("articles", [])
+                
+                return JsonResponse({
+                    "success": True,
+                    "articles": articles,
+                    "totalArticles": len(articles),
+                    "debug": {
+                        "requestedUrl": requested_url,
+                        "status": response.status_code,
+                        "statusText": "OK",
+                        "timestamp": timezone.now().isoformat()
+                    },
+                    "raw": {
+                        "articles": articles
+                    }
+                })
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": f"Microservice error: {str(e)}",
+                "debug": {
+                    "requestedUrl": requested_url,
+                    "status": 500,
+                    "statusText": "Internal Server Error",
+                    "timestamp": timezone.now().isoformat()
+                }
+            }, status=500)
+
+class GNewsSearchView(View):
+    """
+    Proxy endpoint for the GNews search service.
+    """
+    def get(self, request):
+        import httpx
+        from django.conf import settings
+        from django.utils import timezone
+        
+        base_url = getattr(settings, 'MICROSERVICE_URL', 'http://localhost:8001')
+        url = f"{base_url.rstrip('/')}/news/fetch"
+        
+        q = request.GET.get('q', 'AI advancements')
+        lang = request.GET.get('lang', None)
+        country = request.GET.get('country', None)
+        max_val = int(request.GET.get('max', 10))
+        from_date = request.GET.get('from', None)
+        to_date = request.GET.get('to', None)
+        sortby = request.GET.get('sortby', 'publishedAt')
+        nullable = request.GET.get('nullable', None)
+        
+        payload = {
+            "query": q,
+            "max_results": max_val,
+            "sortby": sortby
+        }
+        if lang:
+            payload["lang"] = lang
+        if country:
+            payload["country"] = country
+        if from_date:
+            payload["from_date"] = from_date
+        if to_date:
+            payload["to_date"] = to_date
+        if nullable:
+            payload["nullable"] = nullable
+
+        requested_url = f"https://gnews.io/api/v4/search?q={q}&max={max_val}&sortby={sortby}"
+        if lang: requested_url += f"&lang={lang}"
+        if country: requested_url += f"&country={country}"
+        if from_date: requested_url += f"&from={from_date}"
+        if to_date: requested_url += f"&to={to_date}"
+        if nullable: requested_url += f"&nullable={nullable}"
+
+        try:
+            with httpx.Client() as client:
+                response = client.post(url, json=payload, timeout=30.0)
+                response.raise_for_status()
+                data = response.json()
+                articles = data.get("articles", [])
+                
+                return JsonResponse({
+                    "success": True,
+                    "articles": articles,
+                    "totalArticles": len(articles),
+                    "debug": {
+                        "requestedUrl": requested_url,
+                        "status": response.status_code,
+                        "statusText": "OK",
+                        "timestamp": timezone.now().isoformat()
+                    },
+                    "raw": {
+                        "articles": articles
+                    }
+                })
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": f"Microservice error: {str(e)}",
+                "debug": {
+                    "requestedUrl": requested_url,
+                    "status": 500,
+                    "statusText": "Internal Server Error",
+                    "timestamp": timezone.now().isoformat()
+                }
+            }, status=500)
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(require_jwt, name='dispatch')
+class BriefingsView(View):
+    """ Synthesizes multi-article briefings by calling FastAPI Groq endpoint. """
+    def post(self, request):
+        from services.ai_service import AIService
+        try:
+            data = json.loads(request.body)
+            node_ids = data.get('node_ids', [])
+            nodes = KnowledgeBaseNode.objects.filter(id__in=node_ids)
+            
+            articles = []
+            for node in nodes:
+                articles.append({
+                    "title": node.title,
+                    "content": node.content_processed or node.content_raw
+                })
+                
+            if not articles:
+                return JsonResponse({'status': 'error', 'message': 'No articles selected.'}, status=400)
+                
+            ai_service = AIService()
+            briefing = async_to_sync(ai_service.generate_briefing)(articles)
+            return JsonResponse({'status': 'success', 'briefing': briefing})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+

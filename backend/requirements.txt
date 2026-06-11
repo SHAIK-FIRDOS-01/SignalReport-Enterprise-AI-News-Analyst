@@ -1,5 +1,5 @@
 Django==5.0.3  # Using latest stable 5.0.3, acting as the foundation for the "6.0" features requested
-PyMySQL==1.1.0  # Pure-Python alternative to mysqlclient to avoid C++ Build Tools error on Windows
+psycopg2-binary>=2.9.10  # PostgreSQL adapter for Python
 argon2-cffi==23.1.0
 python-dotenv==1.0.1
 httpx==0.27.0

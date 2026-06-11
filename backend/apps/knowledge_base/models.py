@@ -15,6 +15,8 @@ class KnowledgeBaseNode(models.Model):
     source_url = models.URLField(max_length=500, unique=True)
     published_at = models.DateTimeField(null=True, blank=True)
     category = models.CharField(max_length=100, default='General', db_index=True)
+    geography = models.CharField(max_length=50, default='International', db_index=True)
+    image_url = models.URLField(max_length=1000, blank=True, null=True)
     
     # Content Fields
     content_raw = models.TextField(help_text=_("Original unedited snippet from the source"))
@@ -41,6 +43,10 @@ class KnowledgeBaseNode(models.Model):
         help_text=_("Calculated credibility score from NLP/AI processing")
     )
     
+    # Sentiment & Entity Tracking (For Trend Analytics)
+    sentiment_score = models.FloatField(default=0.0, help_text=_("NLP Sentiment Score from -1.0 to 1.0"))
+    entities = models.JSONField(default=list, blank=True, help_text=_("Extracted entities (organizations, locations, etc.)"))
+    
     # Auditing / Fallback
     fail_reason = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -56,3 +62,5 @@ class KnowledgeBaseNode(models.Model):
 
     def __str__(self):
         return f"[{self.embedding_status}] {self.title[:50]}"
+
+

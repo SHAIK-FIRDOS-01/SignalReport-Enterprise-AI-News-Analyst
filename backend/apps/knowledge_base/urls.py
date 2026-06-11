@@ -8,4 +8,7 @@ urlpatterns = [
     path('ingest/', views.IngestView.as_view(), name='ingest'),
     path('glossary/', views.GlossaryView.as_view(), name='glossary'),
     path('ask/', views.AskQuestionView.as_view(), name='ask'),
+    path('briefings/', views.BriefingsView.as_view(), name='briefings'),
+    path('api/top-headlines', views.GNewsHeadlinesView.as_view(), name='api_headlines'),
+    path('api/search', views.GNewsSearchView.as_view(), name='api_search'),
 ]

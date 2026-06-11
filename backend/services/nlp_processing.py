@@ -1,44 +1,28 @@
 import logging
 from typing import Dict, Any
-import asyncio
+import httpx
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 class NLPProcessingService:
     """
-    Mock integration for a local pre-processing pipeline.
-    In production, this would use spaCy or VADER for sentiment analysis
-    and entity extraction.
+    Proxy service that forwards NLP processing requests to the FastAPI microservice.
     """
     
     def __init__(self):
-        # Initialize spaCy models here
-        # self.nlp = spacy.load("en_core_web_sm")
-        pass
+        self.base_url = getattr(settings, 'MICROSERVICE_URL', 'http://localhost:8001')
 
     async def process_content(self, text: str) -> Dict[str, Any]:
-        """
-        Extract entities, calculate sentiment, and clean text.
-        """
+        url = f"{self.base_url.rstrip('/')}/nlp/process"
+        payload = {
+            "text": text
+        }
         try:
-            # Simulated Async Processing
-            await asyncio.sleep(0.1) 
-            
-            if not text:
-                return {"sentiment": 0.0, "entities": [], "error": "Empty text"}
-
-            # Mock VADER Sentiment (Range -1 to 1)
-            mock_sentiment = 0.45 
-            
-            # Mock spaCy Entities
-            mock_entities = ["AI", "OpenAI", "Google"]
-
-            return {
-                "sentiment": mock_sentiment,
-                "entities": mock_entities,
-                "word_count": len(text.split()),
-                "status": "success"
-            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=30.0)
+                response.raise_for_status()
+                return response.json()
         except Exception as e:
-            logger.error(f"NLP processing failed: {str(e)}")
+            logger.error(f"Failed to run NLP processing on microservice: {str(e)}")
             return {"sentiment": 0.0, "entities": [], "status": "failed", "error": str(e)}

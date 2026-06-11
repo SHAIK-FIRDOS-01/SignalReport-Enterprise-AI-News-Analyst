@@ -1,48 +1,17 @@
-import os
-import httpx
 import logging
 from typing import List, Dict, Any
+import httpx
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 class NewsIngestionService:
     """
-    Service for fetching news from the GNews API asynchronously.
-    Includes rate-limiting and fail-safe logic.
+    Proxy service that forwards news fetching requests to the FastAPI microservice.
     """
     
     def __init__(self):
-        self.api_key = os.getenv('GNEWS_API_KEY')
-        self.search_url = "https://gnews.io/api/v4/search"
-        self.headlines_url = "https://gnews.io/api/v4/top-headlines"
-        self.max_retries = 3
-
-    async def _make_request(self, url: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
-        import asyncio
-        async with httpx.AsyncClient() as client:
-            for attempt in range(self.max_retries):
-                try:
-                    response = await client.get(url, params=params, timeout=20.0)
-                    
-                    if response.status_code == 429:
-                        wait_time = (2 ** attempt) + 1
-                        logger.warning(f"Rate limit exceeded. Waiting {wait_time}s before retry...")
-                        await asyncio.sleep(wait_time)
-                        continue
-
-                    response.raise_for_status()
-                    data = response.json()
-                    return data.get('articles', [])
-                except httpx.HTTPStatusError as e:
-                    logger.error(f"HTTP error {e.response.status_code}: {e.response.text}")
-                    if e.response.status_code in [500, 502, 503, 504]:
-                        await asyncio.sleep(2 ** attempt)
-                        continue
-                    break
-                except httpx.RequestError as e:
-                    logger.error(f"Request error: {str(e)}")
-                    await asyncio.sleep(2 ** attempt)
-            return []
+        self.base_url = getattr(settings, 'MICROSERVICE_URL', 'http://localhost:8001')
 
     async def fetch_news(
         self, 
@@ -52,35 +21,44 @@ class NewsIngestionService:
         from_date: str = None,
         to_date: str = None
     ) -> List[Dict[str, Any]]:
-        if not self.api_key or self.api_key == "your_gnews_api_key_here":
-            return []
-        
-        params = {
-            'q': query,
-            'lang': lang,
-            'max': max_results,
-            'apikey': self.api_key,
-            'sortby': 'publishedAt'
+        url = f"{self.base_url.rstrip('/')}/news/fetch"
+        payload = {
+            "query": query,
+            "lang": lang,
+            "max_results": max_results,
+            "from_date": from_date,
+            "to_date": to_date
         }
-        if from_date:
-            params['from'] = from_date
-        if to_date:
-            params['to'] = to_date
-            
-        return await self._make_request(self.search_url, params)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=30.0)
+                response.raise_for_status()
+                data = response.json()
+                return data.get("articles", [])
+        except Exception as e:
+            logger.error(f"Failed to fetch news from microservice: {str(e)}")
+            return []
 
     async def fetch_top_headlines(
         self, 
-        category: str = "technology", 
+        category: str = "general", 
         lang: str = "en", 
+        country: str = None,
         max_results: int = 10
     ) -> List[Dict[str, Any]]:
-        if not self.api_key:
-            return []
-        params = {
-            'category': category,
-            'lang': lang,
-            'max': max_results,
-            'apikey': self.api_key
+        url = f"{self.base_url.rstrip('/')}/news/headlines"
+        payload = {
+            "category": category,
+            "lang": lang,
+            "country": country,
+            "max_results": max_results
         }
-        return await self._make_request(self.headlines_url, params)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=30.0)
+                response.raise_for_status()
+                data = response.json()
+                return data.get("articles", [])
+        except Exception as e:
+            logger.error(f"Failed to fetch headlines from microservice: {str(e)}")
+            return []

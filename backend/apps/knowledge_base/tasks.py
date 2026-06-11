@@ -2,6 +2,8 @@ import asyncio
 import logging
 from asgiref.sync import sync_to_async
 from django.utils import timezone
+from datetime import timedelta
+from django.core.cache import cache
 
 from .models import KnowledgeBaseNode, EmbeddingStatus
 from services.news_ingestion import NewsIngestionService
@@ -9,90 +11,122 @@ from services.nlp_processing import NLPProcessingService
 from services.ai_service import AIService
 from services.scraper_service import ContentScraperService
 
-from django.core.cache import cache
-from datetime import timedelta
-
 logger = logging.getLogger(__name__)
 
 INGESTION_LOCK_KEY = "news_ingestion_lock"
 INGESTION_LOCK_TIMEOUT = 600  # 10 minutes
 
-async def full_system_ingestion(is_historical: bool = False):
+async def fast_ingest_and_save(is_historical: bool = False):
     """
-    Enterprise-level orchestration for fetching news across all categories.
-    Now includes full-content scraping.
+    Fetches news from GNews API and saves to database.
     """
     # 1. Acquire Distributed Lock
     lock_acquired = cache.add(INGESTION_LOCK_KEY, "true", INGESTION_LOCK_TIMEOUT)
     if not lock_acquired:
-        logger.warning("Ingestion already in progress. Skipping this run.")
-        return False
+        logger.warning("Ingestion already in progress. Skipping fast fetch.")
+        return 0
 
     try:
-        logger.info(f"Starting {'Historical ' if is_historical else 'Latest '}Full System Ingestion...")
+        logger.info(f"Starting {'Historical ' if is_historical else 'Latest '}Fast Ingestion...")
+        
+        regions = [
+            {"name": "India", "country": "in"},
+            {"name": "International", "country": "us"}
+        ]
         
         categories = {
-            "All": "general OR world news",
-            "Finance": "finance OR business OR economy OR markets",
-            "Tech": "technology OR AI OR software OR gadgets",
-            "Politics": "politics OR government OR elections OR policy",
-            "Sports": "sports OR athletics",
-            "Health": "health OR medicine OR wellness",
-            "Science": "science OR space OR research"
+            "General": "general",
+            "Business": "business",
+            "Technology": "technology",
+            "Science": "science",
+            "Sports": "sports"
         }
 
-        # Calculate dates for historical window (30 days ago)
-        from_date = None
-        if is_historical:
-            thirty_days_ago = timezone.now() - timedelta(days=30)
-            from_date = thirty_days_ago.strftime('%Y-%m-%dT%H:%M:%SZ')
-
         ingestion_service = NewsIngestionService()
-        scraper_service = ContentScraperService()
         total_created = 0
 
-        for label, query in categories.items():
-            logger.info(f"Fetching news for category: {label}")
-            
-            articles = await ingestion_service.fetch_news(
-                query=query, 
-                from_date=from_date,
-                max_results=15 if is_historical else 10
-            )
-            
-            for art in articles:
-                # Create Node (minimal data initially)
-                node, created = await sync_to_async(KnowledgeBaseNode.objects.get_or_create)(
-                    source_url=art['url'],
-                    defaults={
-                        'title': art['title'],
-                        'content_raw': art['content'],
-                        'published_at': art.get('publishedAt', timezone.now()),
-                        'category': label
-                    }
+        async def fetch_and_save(region, label, gnews_cat):
+            try:
+                articles = await ingestion_service.fetch_top_headlines(
+                    category=gnews_cat,
+                    lang="en",
+                    country=region["country"],
+                    max_results=15 if is_historical else 10
                 )
-                if created:
-                    total_created += 1
-                    # Enterprise Logic: Scrape full text immediately
-                    full_text = await scraper_service.scrape_full_content(art['url'])
-                    if full_text:
-                        node.full_text_scraped = full_text
-                        await sync_to_async(node.save)(update_fields=['full_text_scraped'])
-                    
-                    # AI Processing is now deferred to user click (dynamic)
+                
+                created_in_cat = 0
+                for art in articles:
+                    node, created = await sync_to_async(KnowledgeBaseNode.objects.get_or_create)(
+                        source_url=art['url'],
+                        defaults={
+                            'title': art['title'],
+                            'content_raw': art.get('description') or art.get('content') or '',
+                            'published_at': art.get('publishedAt', timezone.now()),
+                            'category': label,
+                            'geography': region['name'],
+                            'image_url': art.get('image')
+                        }
+                    )
+                    if created:
+                        created_in_cat += 1
+                return created_in_cat
+            except Exception as ex:
+                logger.error(f"Error fetching region {region['name']} cat {label}: {str(ex)}")
+                return 0
 
-        logger.info(f"Ingestion completed. {total_created} new articles added and scraped.")
-        return True
+        # Fetch standard GNews feeds
+        tasks = []
+        for region in regions:
+            for label, gnews_cat in categories.items():
+                tasks.append(fetch_and_save(region, label, gnews_cat))
+                
+        results = await asyncio.gather(*tasks)
+        total_created += sum(results)
+
+        logger.info(f"Fast Ingestion completed. {total_created} new articles saved.")
+        return total_created
 
     except Exception as e:
-        logger.error(f"Full system ingestion failed: {str(e)}")
-        return False
+        logger.error(f"Fast ingestion failed: {str(e)}")
+        return 0
     finally:
         cache.delete(INGESTION_LOCK_KEY)
 
+async def background_scrape_all_pending():
+    """
+    Background worker that loops through unscraped articles and extracts their full text.
+    """
+    try:
+        from django.db.models import Q
+        # Retrieve all nodes missing scraped text
+        nodes = await sync_to_async(list)(
+            KnowledgeBaseNode.objects.filter(Q(full_text_scraped__isnull=True) | Q(full_text_scraped=''))
+        )
+        
+        if not nodes:
+            return
+            
+        logger.info(f"Starting background scraping for {len(nodes)} articles...")
+        scraper_service = ContentScraperService()
+        total_scraped = 0
+        
+        for node in nodes:
+            try:
+                full_text = await scraper_service.scrape_full_content(node.source_url)
+                if full_text:
+                    node.full_text_scraped = full_text
+                    await sync_to_async(node.save)(update_fields=['full_text_scraped'])
+                    total_scraped += 1
+            except Exception as e:
+                logger.error(f"Failed background scraping for {node.source_url}: {str(e)}")
+                
+        logger.info(f"Background scraping completed. {total_scraped} articles enriched.")
+    except Exception as e:
+        logger.error(f"Background scraping worker failed: {str(e)}")
+
 async def process_article_pipeline(article_id: int):
     """
-    Enrichment pipeline that uses full scraped text if available.
+    Enrichment pipeline that uses full scraped text if available, extracting sentiment and entities.
     """
     try:
         node = await sync_to_async(KnowledgeBaseNode.objects.get)(id=article_id)
@@ -100,11 +134,10 @@ async def process_article_pipeline(article_id: int):
         if node.embedding_status == EmbeddingStatus.COMPLETED and node.content_processed:
             logger.info(f"Article {article_id} already processed. Skipping.")
             return
-
+ 
         node.embedding_status = EmbeddingStatus.PROCESSING
         await sync_to_async(node.save)(update_fields=['embedding_status'])
 
-        
         logger.info(f"Starting pipeline for article: {node.title}")
 
         # Use full text if we have it, otherwise fallback to GNews snippet
@@ -127,6 +160,10 @@ async def process_article_pipeline(article_id: int):
         node.embedding_vector = ai_result.get('vector')
         node.source_credibility_score = ai_result.get('credibility_score', 0.5)
         
+        # Save Sentiment & Entities
+        node.sentiment_score = nlp_result.get('sentiment', 0.0)
+        node.entities = nlp_result.get('entities', [])
+        
         if enhanced_content.startswith("FALLBACK_MODE"):
             node.embedding_status = EmbeddingStatus.FAILED
             node.fail_reason = "AI Processing Fallback: Quota exceeded or API error."
@@ -145,9 +182,15 @@ async def process_article_pipeline(article_id: int):
             node.fail_reason = str(e)
             await sync_to_async(node.save)(update_fields=['embedding_status', 'fail_reason'])
 
+async def full_system_ingestion(is_historical: bool = False):
+    """
+    Legacy method kept for backwards compatibility.
+    """
+    await fast_ingest_and_save(is_historical)
+    await background_scrape_all_pending()
 
 async def trigger_news_ingestion(query: str = "AI advancements"):
     """
     Legacy background task for backward compatibility.
     """
-    return await full_system_ingestion(is_historical=False)
+    return await fast_ingest_and_save(is_historical=False)

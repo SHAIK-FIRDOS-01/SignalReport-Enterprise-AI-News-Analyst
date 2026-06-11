@@ -1,21 +1,66 @@
 <div align="center">
 
 # 📰 SignalReport
-### Enterprise AI News Analyst
+### Enterprise AI News Analyst Prototype
 
-*An autonomous RAG pipeline that transforms high-volume global news into structured, actionable semantic intelligence — scaled via a decoupled microservices architecture to offload high-compute LLM operations and network-heavy ingestion.*
+*An automated intelligence pipeline that ingests global news, extracts semantic metadata, and delivers deep AI analysis via a decoupled microservices architecture. Designed as a robust showcase of backend complexity and microservice coordination.*
 
 ---
 
 [![Llama 3.3](https://img.shields.io/badge/LLM-Llama_3.3-0467DF?style=for-the-badge&logo=meta)](https://llama.meta.com/)
 [![Groq](https://img.shields.io/badge/Inference-Groq-orange?style=for-the-badge)](https://groq.com/)
-[![Django](https://img.shields.io/badge/Django-6.0-092E20?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-5.0-092E20?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
+[![CSS3](https://img.shields.io/badge/CSS3-Vanilla-1572B6?style=for-the-badge&logo=css3)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
 </div>
+
+---
+
+## 🎨 System Architecture
+
+The project uses a decoupled, high-performance microservices architecture to offload heavy network ingestion, web-scraping, and LLM reasoning tasks from the Django application server.
+
+```mermaid
+graph TD
+    classDef frontend fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef backend fill:#0c111d,stroke:#10b981,stroke-width:2px,color:#f8fafc;
+    classDef service fill:#111827,stroke:#6366f1,stroke-width:2px,color:#f8fafc;
+    classDef external fill:#1e1b4b,stroke:#a855f7,stroke-width:1px,color:#cbd5e1;
+
+    subgraph FE [React Glassmorphic Dashboard]
+        Dashboard["Intelligence Feed View"]:::frontend
+        Drawer["Detail Panel: AI Summary | Glossary | Q&A"]:::frontend
+    end
+
+    subgraph BE [Django Core Control & Storage]
+        API["Django REST API Engine"]:::backend
+        DB[(PostgreSQL Database)]:::backend
+        Scheduler["Background Loop Scheduler"]:::backend
+    end
+
+    subgraph MS [FastAPI Processing Agent]
+        FastAPIApp["FastAPI Ingest Service"]:::service
+        Scraper["Content Scraper Engine"]:::service
+        NLP["NLP Entity/Sentiment Service"]:::service
+        Groq["Groq Llama 3.3 Inference Engine"]:::service
+    end
+
+    Dashboard -->|JWT Secured Queries| API
+    Drawer -->|Double-Click Term Lookup| API
+    Drawer -->|Contextual Q&A Prompts| API
+    API <--> DB
+    
+    Scheduler -->|Triggers News Fetch| FastAPIApp
+    FastAPIApp -->|1. Fetch Articles| GNews["GNews API"]:::external
+    FastAPIApp -->|2. Scrape Full Content| Scraper
+    FastAPIApp -->|3. Extract Sentiment & Entities| NLP
+    FastAPIApp -->|4. Summarize & Evaluate Trust| Groq
+    FastAPIApp -->|5. Return Structured JSON| Scheduler
+    Scheduler -->|6. Save & Update Nodes| DB
+```
 
 ---
 
@@ -23,50 +68,22 @@
 
 | Feature | Description |
 |---|---|
-| **Decoupled Microservices** | Offloads CPU-intensive LLM inference and external API fetching from the core application into high-throughput microservices |
-| **Autonomous RAG Pipeline** | Dynamically queries, embeds, and processes global news using Llama 3.3 via Groq for rapid semantic analysis |
-| **Async Ingestion** | `asyncio` loop with exponential backoff and custom fail-safes, maximizing pipeline durability during high-concurrency API stress |
-| **Real-Time NLP Engine** | Streamlined sentiment calculation and structured entity extraction — filters irrelevant noise by **30%** |
-| **Strict Schema Enforcement** | Native Pydantic v2 validation guarantees **100% data consistency** for automated glossary generation and downstream APIs |
-| **Enterprise Storage** | PostgreSQL data layer for optimal relational integrity, multi-tenant index tracking, and vector-ready compatibility |
-| **Glassmorphic Dashboard** | Premium React interface with Framer Motion micro-interactions, dynamic terminology tooltips, and contextual Q&A |
+| **Decoupled Architecture** | Offloads high-compute LLM inference and network-heavy web-scraping to a dedicated FastAPI microservice, ensuring the core Django server remains responsive. |
+| **Autonomous News Ingest** | An asynchronous periodic scheduler loop scrapes, filters, and logs top global headlines under targeted categories. |
+| **AI Enrichment Pipeline** | Processes full scraped articles to compute a **Trust Credibility Score**, extract sentiment metrics, and identify key named entities using Llama 3.3 via Groq. |
+| **Double-Click Glossary** | Instantly generates contextual terminology explanations. Highlight or double-click any word/phrase in an article summary to receive an AI-generated definition. |
+| **Contextual Article Q&A** | Chat directly with individual articles. Ask questions about the story, claims, or logic, with Llama 3.3 responding using the full article text as local context. |
+| **Secure Token Auth** | JSON Web Token (JWT) credentials gate and authorize all dashboard operations. Automatically clears credentials and securely redirects to sign-in upon logout. |
+| **Glassmorphic UI** | Premium single-page React client styled with customized Vanilla CSS, complete with loading indicators and full-screen layouts. |
 
 ---
 
 ## 🛠️ Technology Stack
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         SignalReport                            │
-├───────────────────┬─────────────────────┬───────────────────────┤
-│  AI & Ingestion   │   Core Platform     │      Frontend         │
-│   (Microservice)  │  & Business Logic   │     Dashboard         │
-├───────────────────┼─────────────────────┼───────────────────────┤
-│  FastAPI          │  Django 6.0         │  React 19             │
-│  Llama 3.3        │  Django REST        │  Tailwind CSS v4      │
-│  Groq             │  Framework          │  Framer Motion        │
-│  GNews API        │                     │                       │
-│  Pydantic v2      │                     │                       │
-├───────────────────┴─────────────────────┴───────────────────────┤
-│                     Data Layer                                  │
-│              PostgreSQL (Relational Tracking & Analytics)       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 📂 Project Structure
-
-```
-SignalReport/
-├── services/
-│   └── ai_ingestion/        # FastAPI microservice
-│                            # GNews processing, Groq LLM calls, NLP extraction
-├── backend/                 # Core Django application
-│                            # Auth, business logic, configs, dashboard APIs
-└── frontend/                # React dashboard
-                             # Glassmorphic intelligence interface
-```
+* **Frontend**: React 19, Lucide Icons, Custom Glassmorphic Vanilla CSS layout.
+* **Core Backend**: Django 5.0, Django REST Framework, JWT-based security middleware.
+* **AI Ingestion Microservice**: FastAPI, Pydantic v2 validation, Groq API (Llama 3.3), BeautifulSoup4 scraper.
+* **Database & Caching**: PostgreSQL (structured news node storage), Redis (lock-management and ingestion rate limits).
 
 ---
 
@@ -77,8 +94,9 @@ SignalReport/
 - Python `3.12+`
 - Node.js `(Latest LTS)`
 - PostgreSQL `(Running instance)`
-- `GROQ_API_KEY`
-- `GNEWS_API_KEY`
+- Redis `(Running instance or mock cache)`
+- `GROQ_API_KEY` (Free key from Groq console)
+- `GNEWS_API_KEY` (Free key from GNews.io)
 
 ---
 
@@ -91,34 +109,41 @@ git clone https://github.com/SHAIK-FIRDOS-01/SignalReport.git
 cd SignalReport
 ```
 
-#### 2. Configure the Storage Layer
+#### 2. Storage Setup
 
-Ensure your PostgreSQL instance is running, then create a database named `signalreport`. Add a `.env` file inside `/backend` with your database credentials.
+Ensure PostgreSQL is running and create a database named `signalreport`. Place a `.env` configuration file in `/backend` referencing the database:
+```env
+DB_NAME=signalreport
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=127.0.0.1
+DB_PORT=5432
+```
 
-#### 3. Start the FastAPI Ingestion Microservice
+#### 3. Run FastAPI Ingestion Microservice
 
 ```bash
 cd services/ai_ingestion
 python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+venv\Scripts\activate          # Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
 
-# Set environment variables: GROQ_API_KEY and GNEWS_API_KEY
+# Set GROQ_API_KEY and GNEWS_API_KEY in services/ai_ingestion/.env
 uvicorn main:app --port 8001 --reload
 ```
 
-#### 4. Initialize the Django Backend
+#### 4. Run Django Core Backend
 
 ```bash
 cd ../../backend
 python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+venv\Scripts\activate          # Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-#### 5. Launch the Frontend
+#### 5. Run React Frontend
 
 ```bash
 cd ../frontend
@@ -130,6 +155,6 @@ npm run dev
 
 <div align="center">
 
-Built by **Shaik Firdos**
+Built with 💻 by **Shaik Firdos**
 
 </div>

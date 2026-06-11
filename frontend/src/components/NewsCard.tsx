@@ -27,7 +27,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ node, onSummarize, onOpenDigest }) 
   const [isSummarizing, setIsSummarizing] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseUp = (e: React.MouseEvent) => {
+  const handleMouseUp = () => {
     if (floating) return;
 
     const selection = window.getSelection();
@@ -226,6 +226,19 @@ const NewsCard: React.FC<NewsCardProps> = ({ node, onSummarize, onOpenDigest }) 
 
       {/* Main Card Content */}
       <div style={{ opacity: floating ? 0.2 : 1, transition: 'opacity 0.3s ease', display: 'flex', flexDirection: 'column', height: '100%', pointerEvents: floating ? 'none' : 'auto' }}>
+        {node.image_url && (
+          <div className="card-image-container" style={{ width: 'calc(100% + 3rem)', height: '160px', margin: '-1.5rem -1.5rem 1rem -1.5rem', overflow: 'hidden', borderBottom: '1px solid var(--card-border)' }}>
+            <img 
+              src={node.image_url} 
+              alt={node.title} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              onError={(e) => { 
+                const parent = (e.target as HTMLElement).parentElement;
+                if (parent) parent.style.display = 'none';
+              }}
+            />
+          </div>
+        )}
         <div className="card-meta">
           <span className={`status-badge ${statusClass}`}>
             {node.embedding_status}

@@ -63,6 +63,19 @@ const IntelligenceDigest: React.FC<IntelligenceDigestProps> = ({ node, onClose, 
         <div className="digest-content-layout">
           {/* Main Content Area */}
           <main className="digest-main">
+            {node.image_url && (
+              <div className="digest-image-container" style={{ width: '100%', maxHeight: '320px', overflow: 'hidden', borderRadius: '12px', marginBottom: '2rem' }}>
+                <img 
+                  src={node.image_url} 
+                  alt={node.title} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  onError={(e) => { 
+                    const parent = (e.target as HTMLElement).parentElement;
+                    if (parent) parent.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
             {/* Top Section: AI Summary */}
             <section className="digest-section summary-section">
               <h3 className="section-title"><Sparkles size={18} /> AI Intelligence Summary</h3>
