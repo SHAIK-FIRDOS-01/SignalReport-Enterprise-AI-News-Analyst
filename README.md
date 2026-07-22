@@ -27,27 +27,22 @@ The project uses a decoupled, high-performance microservices architecture to off
 
 ```mermaid
 graph TD
-    classDef frontend fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
-    classDef backend fill:#0c111d,stroke:#10b981,stroke-width:2px,color:#f8fafc;
-    classDef service fill:#111827,stroke:#6366f1,stroke-width:2px,color:#f8fafc;
-    classDef external fill:#1e1b4b,stroke:#a855f7,stroke-width:1px,color:#cbd5e1;
-
     subgraph FE [React Glassmorphic Dashboard]
-        Dashboard["Intelligence Feed View"]:::frontend
-        Drawer["Detail Panel: AI Summary | Glossary | Q&A"]:::frontend
+        Dashboard["Intelligence Feed View"]
+        Drawer["Detail Panel: AI Summary | Glossary | Q&A"]
     end
 
     subgraph BE [Django Core Control & Storage]
-        API["Django REST API Engine"]:::backend
-        DB[(PostgreSQL Database)]:::backend
-        Scheduler["Background Loop Scheduler"]:::backend
+        API["Django REST API Engine"]
+        DB[(PostgreSQL Database)]
+        Scheduler["Background Loop Scheduler"]
     end
 
     subgraph MS [FastAPI Processing Agent]
-        FastAPIApp["FastAPI Ingest Service"]:::service
-        Scraper["Content Scraper Engine"]:::service
-        NLP["NLP Entity/Sentiment Service"]:::service
-        Groq["Groq Llama 3.3 Inference Engine"]:::service
+        FastAPIApp["FastAPI Ingest Service"]
+        Scraper["Content Scraper Engine"]
+        NLP["NLP Entity/Sentiment Service"]
+        Groq["Groq Llama 3.3 Inference Engine"]
     end
 
     Dashboard -->|JWT Secured Queries| API
@@ -56,7 +51,7 @@ graph TD
     API <--> DB
     
     Scheduler -->|Triggers News Fetch| FastAPIApp
-    FastAPIApp -->|1. Fetch Early Signals| Sources["Reddit, HackerNews, GitHub APIs"]:::external
+    FastAPIApp -->|1. Fetch Early Signals| Sources["Reddit, HackerNews, GitHub APIs"]
     FastAPIApp -->|2. Scrape Full Content| Scraper
     FastAPIApp -->|3. Extract Sentiment & Entities| NLP
     FastAPIApp -->|4. Summarize & Evaluate Trust| Groq
