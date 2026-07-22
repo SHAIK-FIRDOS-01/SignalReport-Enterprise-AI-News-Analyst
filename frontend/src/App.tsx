@@ -14,8 +14,10 @@ import {
   ChevronRight,
   X,
   CheckSquare,
-  Square
+  Square,
+  Bell
 } from 'lucide-react';
+import { useNewsWebsocket } from './hooks/useNewsWebsocket';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -84,6 +86,9 @@ function App() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<number[]>([]);
   const [briefingMarkdown, setBriefingMarkdown] = useState<string | null>(null);
   const [briefingLoading, setBriefingLoading] = useState(false);
+
+  // Websocket Alert
+  const { alert: wsAlert } = useNewsWebsocket();
 
   // Helper fetch method
   const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
@@ -513,6 +518,31 @@ function App() {
 
   return (
     <div className="app-shell">
+      {/* WS Alert Toast */}
+      {wsAlert && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          backgroundColor: '#3b82f6',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          zIndex: 50,
+          animation: 'bounce 1s infinite'
+        }}>
+          <Bell size={24} />
+          <div>
+            <p style={{ fontWeight: 'bold', margin: 0 }}>Real-time Alert</p>
+            <p style={{ fontSize: '14px', margin: 0 }}>{wsAlert.message}</p>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Pane */}
       <div className="content-area">
         <header className="top-bar">

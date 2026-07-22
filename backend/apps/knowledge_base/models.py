@@ -1,5 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from pgvector.django import VectorField
+from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.indexes import GinIndex
 
 class EmbeddingStatus(models.TextChoices):
     PENDING = 'PENDING', _('Pending')
@@ -30,12 +33,16 @@ class KnowledgeBaseNode(models.Model):
         default=EmbeddingStatus.PENDING
     )
     
-    # Vector Field - using MySQL Native JSON Data Type
-    embedding_vector = models.JSONField(
+    # Vector Field - using pgvector
+    embedding_vector = VectorField(
+        dimensions=5, # Using 5 to match the current Groq prompt mock, normally 1536 for OpenAI etc
         blank=True, 
         null=True, 
-        help_text=_("Vector representation for RAG using MySQL JSON")
+        help_text=_("Vector representation for RAG using pgvector")
     )
+    
+    # Full-Text Search Field
+    search_vector = SearchVectorField(null=True, blank=True)
     
     # Quality & Reliability
     source_credibility_score = models.FloatField(
@@ -58,6 +65,7 @@ class KnowledgeBaseNode(models.Model):
         indexes = [
             models.Index(fields=['embedding_status']),
             models.Index(fields=['published_at']),
+            GinIndex(fields=['search_vector']),
         ]
 
     def __str__(self):

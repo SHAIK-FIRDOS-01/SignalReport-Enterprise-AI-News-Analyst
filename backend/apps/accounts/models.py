@@ -43,6 +43,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
 
+    ROLE_CHOICES = (
+        ('STANDARD', 'Standard User'),
+        ('ANALYST', 'Enterprise Analyst'),
+        ('ADMIN', 'Admin'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STANDARD')
+
     # MFA Readiness Fields
     mfa_enabled = models.BooleanField(default=False)
     mfa_secret = models.CharField(max_length=255, blank=True, null=True, help_text=_("Encrypted MFA secret key"))

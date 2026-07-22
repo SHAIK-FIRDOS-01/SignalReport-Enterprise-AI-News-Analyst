@@ -1,8 +1,12 @@
 import os
-from typing import Optional, Dict, Any
-from fastapi import FastAPI, HTTPException
+import json
+import asyncio
+from contextlib import asynccontextmanager
+from typing import Optional, Dict, Any, List
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import redis.asyncio as aioredis
 
 # Load env variables (GNEWS_API_KEY, GROQ_API_KEY, etc.)
 load_dotenv()
@@ -11,11 +15,65 @@ from news_ingestion import NewsIngestionService
 from scraper_service import ContentScraperService
 from nlp_processing import NLPProcessingService
 from ai_service import AIService
+from hn_ingestion import HackerNewsIngestionService
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
+
+# Redis PubSub Listener
+async def redis_listener():
+    redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+    r = await aioredis.from_url(redis_url)
+    pubsub = r.pubsub()
+    await pubsub.subscribe('news_alerts')
+    
+    try:
+        async for message in pubsub.listen():
+            if message['type'] == 'message':
+                data = message['data'].decode('utf-8')
+                await manager.broadcast(data)
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await pubsub.unsubscribe('news_alerts')
+        await r.aclose()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    listener_task = asyncio.create_task(redis_listener())
+    yield
+    # Shutdown
+    listener_task.cancel()
+    try:
+        await listener_task
+    except asyncio.CancelledError:
+        pass
 
 app = FastAPI(
     title="SignalReport Ingestion & AI Microservice",
     description="Decoupled high-compute microservice for NLP, LLM, and Ingestion operations.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Initialize services
@@ -23,6 +81,7 @@ news_service = NewsIngestionService()
 scraper_service = ContentScraperService()
 nlp_service = NLPProcessingService()
 ai_service = AIService()
+hn_service = HackerNewsIngestionService()
 
 # Request schemas
 class FetchNewsRequest(BaseModel):
@@ -45,6 +104,9 @@ class FetchHeadlinesRequest(BaseModel):
     to_date: Optional[str] = None
     nullable: Optional[str] = None
 
+class FetchHNRequest(BaseModel):
+    limit: int = 10
+
 class ScrapeRequest(BaseModel):
     url: str
 
@@ -62,10 +124,12 @@ class ExplainTermRequest(BaseModel):
 class AskQuestionRequest(BaseModel):
     question: str
     context: str
+    source_url: Optional[str] = None
 
 class BriefingArticle(BaseModel):
     title: str
     content: str
+    source_url: Optional[str] = None
 
 class SynthesizeRequest(BaseModel):
     articles: list[BriefingArticle]
@@ -115,6 +179,22 @@ async def fetch_top_headlines(req: FetchHeadlinesRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/news/hn/top")
+async def fetch_hn_top(req: FetchHNRequest):
+    try:
+        articles = await hn_service.fetch_top_stories(limit=req.limit)
+        return {"articles": articles}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/news/hn/new")
+async def fetch_hn_new(req: FetchHNRequest):
+    try:
+        articles = await hn_service.fetch_new_stories(limit=req.limit)
+        return {"articles": articles}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/scraper/scrape")
 async def scrape_content(req: ScrapeRequest):
     try:
@@ -150,7 +230,7 @@ async def explain_term(req: ExplainTermRequest):
 @app.post("/ai/ask-question")
 async def ask_question(req: AskQuestionRequest):
     try:
-        answer = await ai_service.answer_question(req.question, req.context)
+        answer = await ai_service.answer_question(req.question, req.context, req.source_url)
         return {"answer": answer}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -158,8 +238,19 @@ async def ask_question(req: AskQuestionRequest):
 @app.post("/ai/synthesize")
 async def synthesize_briefing(req: SynthesizeRequest):
     try:
-        articles_list = [{"title": a.title, "content": a.content} for a in req.articles]
+        articles_list = [{"title": a.title, "content": a.content, "source_url": a.source_url} for a in req.articles]
         briefing = await ai_service.generate_briefing(articles_list)
         return {"briefing": briefing}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.websocket("/ws/alerts")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # We don't expect the client to send much, just keep connection open
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+

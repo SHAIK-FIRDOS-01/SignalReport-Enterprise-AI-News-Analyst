@@ -5,6 +5,8 @@
 
 *An automated intelligence pipeline that ingests global news, extracts semantic metadata, and delivers deep AI analysis via a decoupled microservices architecture. Designed as a robust showcase of backend complexity and microservice coordination.*
 
+> **🚀 Future Vision:** The primary goal of this project is to act as an early-alert system that fetches Tech news *before* it becomes a mainstream sensation. To achieve this, the ingestion pipeline will monitor and analyze real-time data from platforms like **Reddit**, **HackerNews**, and the **GitHub API**.
+
 ---
 
 [![Llama 3.3](https://img.shields.io/badge/LLM-Llama_3.3-0467DF?style=for-the-badge&logo=meta)](https://llama.meta.com/)
@@ -54,7 +56,7 @@ graph TD
     API <--> DB
     
     Scheduler -->|Triggers News Fetch| FastAPIApp
-    FastAPIApp -->|1. Fetch Articles| GNews["GNews API"]:::external
+    FastAPIApp -->|1. Fetch Early Signals| Sources["Reddit, HackerNews, GitHub APIs"]:::external
     FastAPIApp -->|2. Scrape Full Content| Scraper
     FastAPIApp -->|3. Extract Sentiment & Entities| NLP
     FastAPIApp -->|4. Summarize & Evaluate Trust| Groq
@@ -69,7 +71,7 @@ graph TD
 | Feature | Description |
 |---|---|
 | **Decoupled Architecture** | Offloads high-compute LLM inference and network-heavy web-scraping to a dedicated FastAPI microservice, ensuring the core Django server remains responsive. |
-| **Autonomous News Ingest** | An asynchronous periodic scheduler loop scrapes, filters, and logs top global headlines under targeted categories. |
+| **Early-Alert News Ingest (Future)** | An asynchronous periodic scheduler loop that scrapes, filters, and logs emerging tech trends from Reddit, HackerNews, and GitHub before they hit mainstream media. |
 | **AI Enrichment Pipeline** | Processes full scraped articles to compute a **Trust Credibility Score**, extract sentiment metrics, and identify key named entities using Llama 3.3 via Groq. |
 | **Double-Click Glossary** | Instantly generates contextual terminology explanations. Highlight or double-click any word/phrase in an article summary to receive an AI-generated definition. |
 | **Contextual Article Q&A** | Chat directly with individual articles. Ask questions about the story, claims, or logic, with Llama 3.3 responding using the full article text as local context. |

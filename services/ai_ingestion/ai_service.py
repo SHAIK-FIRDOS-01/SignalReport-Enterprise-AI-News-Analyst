@@ -108,9 +108,18 @@ class AIService:
         except Exception:
             return "Definition temporarily unavailable."
 
-    async def answer_question(self, question: str, context: str) -> str:
+    async def answer_question(self, question: str, context: str, source_url: str = None) -> str:
         if not self.client: return "AI Unavailable."
-        prompt = f"Using ONLY this context, answer the question.\n\nContext: '{context[:15000]}'\n\nQuestion: '{question}'"
+        
+        source_text = f"\nSource URL: {source_url}" if source_url else ""
+        prompt = f"""
+        Using ONLY this context, answer the question.
+        You MUST cite your source by appending a markdown link to any facts you state, like so: [Source]({source_url if source_url else 'url'}).
+        
+        Context: '{context[:15000]}'{source_text}
+        
+        Question: '{question}'
+        """
         try:
             response = await self._safe_generate(prompt)
             return response.choices[0].message.content.strip()
@@ -122,7 +131,7 @@ class AIService:
         
         articles_text = ""
         for idx, art in enumerate(articles):
-            articles_text += f"\n--- Article {idx+1}: {art.get('title')} ---\n{art.get('content')[:3000]}\n"
+            articles_text += f"\n--- Article {idx+1}: {art.get('title')} ---\nSource URL: {art.get('source_url', '#')}\n{art.get('content')[:3000]}\n"
             
         prompt = f"""
         You are a senior enterprise intelligence analyst. Write a high-level executive briefing consolidating the following articles:
@@ -132,6 +141,8 @@ class AIService:
         1. **Executive Summary**: A high-level overview of the news.
         2. **Consensus & Conflicts**: Where the articles agree or disagree.
         3. **Key Takeaways & Impact**: Business or technology impact of this information.
+        
+        CRITICAL RULE: You MUST cite your sources using inline Markdown links (e.g., `[Title of Article](URL)`) whenever you mention facts or summarize points from the articles.
         
         Keep it professional, well-formatted, and concise. Do not include introductory or concluding conversational text.
         """

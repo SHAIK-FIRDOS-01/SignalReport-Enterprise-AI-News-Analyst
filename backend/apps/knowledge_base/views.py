@@ -11,7 +11,8 @@ from django_ratelimit.decorators import ratelimit
 
 from .models import KnowledgeBaseNode
 from .tasks import process_article_pipeline, trigger_news_ingestion
-from apps.accounts.utils import require_jwt
+from .tasks import process_article_pipeline, trigger_news_ingestion
+from apps.accounts.utils import require_jwt, role_required
 
 @method_decorator(require_jwt, name='dispatch')
 # @method_decorator(cache_page(60 * 5), name='dispatch') # Cache for 5 mins
@@ -95,17 +96,24 @@ class DashboardView(View):
 
 @method_decorator(require_jwt, name='dispatch')
 class SearchView(View):
-    """ Global search API endpoint. """
+    """ Global search API endpoint using Hybrid Search. """
     def get(self, request):
+        from .search import hybrid_search
         query = request.GET.get('q', '')
-        nodes = KnowledgeBaseNode.objects.filter(title__icontains=query) | KnowledgeBaseNode.objects.filter(content_raw__icontains=query)
+        
+        # In a real setup, we would embed the query here.
+        # Mocking query vector for now to match dimensions=5
+        mock_query_vector = [0.1, 0.2, 0.3, 0.4, 0.5]
+        
+        nodes = hybrid_search(query, mock_query_vector, limit=10)
+        
         data = [{
             'id': node.id,
             'title': node.title,
             'content_raw': node.content_raw,
             'content_processed': node.content_processed,
             'embedding_status': node.embedding_status,
-        } for node in nodes[:10]]
+        } for node in nodes]
         return JsonResponse({'nodes': data})
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -143,6 +151,7 @@ class IngestView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(require_jwt, name='dispatch')
+@method_decorator(role_required(['ANALYST', 'ADMIN']), name='dispatch')
 @method_decorator(ratelimit(key='ip', rate='10/m', method='POST', block=True), name='dispatch')
 class GlossaryView(View):
     """ API endpoint to define a term based on the article's context. """
@@ -164,6 +173,7 @@ class GlossaryView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(require_jwt, name='dispatch')
+@method_decorator(role_required(['ANALYST', 'ADMIN']), name='dispatch')
 @method_decorator(ratelimit(key='ip', rate='10/m', method='POST', block=True), name='dispatch')
 class AskQuestionView(View):
     """ API endpoint to answer a question based on the article's context. """
@@ -178,7 +188,7 @@ class AskQuestionView(View):
             ai_service = AIService()
             context = node.full_text_scraped or node.content_processed or node.content_raw
             
-            answer = async_to_sync(ai_service.answer_question)(question, context)
+            answer = async_to_sync(ai_service.answer_question)(question, context, node.source_url)
             return JsonResponse({'status': 'success', 'answer': answer})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -343,6 +353,7 @@ class GNewsSearchView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(require_jwt, name='dispatch')
+@method_decorator(role_required(['ANALYST', 'ADMIN']), name='dispatch')
 class BriefingsView(View):
     """ Synthesizes multi-article briefings by calling FastAPI Groq endpoint. """
     def post(self, request):
@@ -356,7 +367,8 @@ class BriefingsView(View):
             for node in nodes:
                 articles.append({
                     "title": node.title,
-                    "content": node.content_processed or node.content_raw
+                    "content": node.content_processed or node.content_raw,
+                    "source_url": node.source_url
                 })
                 
             if not articles:

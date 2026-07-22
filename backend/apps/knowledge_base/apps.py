@@ -5,5 +5,5 @@ class KnowledgeBaseConfig(AppConfig):
     name = 'apps.knowledge_base'
 
     def ready(self):
-        from .scheduler import start_scheduler
-        start_scheduler()
+        # Celery beat is now used for background scheduling
+        pass

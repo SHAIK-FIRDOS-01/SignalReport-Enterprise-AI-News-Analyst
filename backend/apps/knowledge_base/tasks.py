@@ -1,6 +1,10 @@
 import asyncio
 import logging
-from asgiref.sync import sync_to_async
+import redis
+import json
+import os
+from celery import shared_task
+from asgiref.sync import sync_to_async, async_to_sync
 from django.utils import timezone
 from datetime import timedelta
 from django.core.cache import cache
@@ -194,3 +198,28 @@ async def trigger_news_ingestion(query: str = "AI advancements"):
     Legacy background task for backward compatibility.
     """
     return await fast_ingest_and_save(is_historical=False)
+
+
+# Celery Tasks
+@shared_task
+def fast_ingest_and_save_task(is_historical: bool = False):
+    total_created = async_to_sync(fast_ingest_and_save)(is_historical)
+    
+    if total_created > 0:
+        # Publish to Redis PubSub for FastAPI WebSockets
+        try:
+            r = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379/0'))
+            r.publish('news_alerts', json.dumps({
+                "type": "new_articles",
+                "count": total_created,
+                "message": f"Successfully ingested {total_created} new articles!"
+            }))
+        except Exception as e:
+            logger.error(f"Failed to publish to redis: {str(e)}")
+            
+    return total_created
+
+@shared_task
+def background_scrape_all_pending_task():
+    async_to_sync(background_scrape_all_pending)()
+
