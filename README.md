@@ -25,39 +25,7 @@
 
 The project uses a decoupled, high-performance microservices architecture to offload heavy network ingestion, web-scraping, and LLM reasoning tasks from the Django application server.
 
-```mermaid
-graph TD
-    subgraph FE [React Glassmorphic Dashboard]
-        Dashboard["Intelligence Feed View"]
-        Drawer["Detail Panel: AI Summary | Glossary | Q&A"]
-    end
-
-    subgraph BE [Django Core Control & Storage]
-        API["Django REST API Engine"]
-        DB[(PostgreSQL Database)]
-        Scheduler["Background Loop Scheduler"]
-    end
-
-    subgraph MS [FastAPI Processing Agent]
-        FastAPIApp["FastAPI Ingest Service"]
-        Scraper["Content Scraper Engine"]
-        NLP["NLP Entity/Sentiment Service"]
-        Groq["Groq Llama 3.3 Inference Engine"]
-    end
-
-    Dashboard -->|JWT Secured Queries| API
-    Drawer -->|Double-Click Term Lookup| API
-    Drawer -->|Contextual Q&A Prompts| API
-    API <--> DB
-    
-    Scheduler -->|Triggers News Fetch| FastAPIApp
-    FastAPIApp -->|1. Fetch Early Signals| Sources["Reddit, HackerNews, GitHub APIs"]
-    FastAPIApp -->|2. Scrape Full Content| Scraper
-    FastAPIApp -->|3. Extract Sentiment & Entities| NLP
-    FastAPIApp -->|4. Summarize & Evaluate Trust| Groq
-    FastAPIApp -->|5. Return Structured JSON| Scheduler
-    Scheduler -->|6. Save & Update Nodes| DB
-```
+![System Architecture](architecture.png)
 
 ---
 
