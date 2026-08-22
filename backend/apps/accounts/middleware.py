@@ -1,5 +1,32 @@
 import uuid
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
+from apps.accounts.models import CustomUser
+from apps.accounts.utils import decode_jwt, extract_token_from_request
+
+
+class JWTCookieAuthenticationMiddleware:
+    """
+    Middleware that seamlessly authenticates requests using HttpOnly JWT cookies
+    or fallback Authorization Bearer tokens, populating request.user with CustomUser.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        token = extract_token_from_request(request)
+        if token:
+            payload = decode_jwt(token)
+            if payload and 'user_id' in payload:
+                user_list = list(CustomUser.objects.filter(id=payload['user_id']))
+                if user_list:
+                    request.user = user_list[0]
+        
+        if not hasattr(request, 'user'):
+            request.user = AnonymousUser()
+
+        return self.get_response(request)
+
 
 class SecurityMiddleware:
     """
@@ -35,19 +62,15 @@ class SecurityMiddleware:
         # 2. X-Content-Type-Options
         response['X-Content-Type-Options'] = 'nosniff'
 
-        # 3. Cache-Control (Zero-Trust: Prevent caching of sensitive data by default, 
-        # though standard views might override this)
-        if request.user.is_authenticated:
+        # 3. Cache-Control (Zero-Trust: Prevent caching of sensitive data by default)
+        if hasattr(request, 'user') and request.user.is_authenticated:
             response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
             response['Pragma'] = 'no-cache'
 
-        # 4. Strict-Transport-Security (HSTS) is handled by Django's native SecurityMiddleware 
-        # based on SECURE_HSTS_SECONDS in settings.py, but we ensure it's layered correctly.
-
-        # 5. Referrer-Policy
+        # 4. Referrer-Policy
         response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
 
-        # 6. Permissions-Policy
+        # 5. Permissions-Policy
         response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
 
         return response

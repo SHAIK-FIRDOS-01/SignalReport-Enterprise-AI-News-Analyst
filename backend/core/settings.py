@@ -41,6 +41,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.accounts.middleware.JWTCookieAuthenticationMiddleware',
+    'apps.accounts.monetization.MonetizationMiddleware',
+    'core.ratelimit.RateLimitMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
@@ -69,18 +72,28 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 ASGI_APPLICATION = 'core.asgi.application'
 
+import sys
+
 # Database
 # https://docs.djangoproject.com/en/stable/ref/settings/#databases
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'signalreport'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+if 'pytest' in sys.modules or 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'signalreport'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+            'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.CustomUser'
@@ -155,17 +168,20 @@ if not DEBUG:
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+        'LOCATION': 'signalreport-locmem',
     }
 }
-if os.getenv('REDIS_URL'):
+if os.getenv('REDIS_URL') and not os.getenv('DJANGO_TESTING'):
     CACHES['default'] = {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': os.getenv('REDIS_URL'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        }
+            'IGNORE_EXCEPTIONS': True,
+        },
+        'KEY_PREFIX': 'signalreport'
     }
+
 
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
@@ -180,17 +196,32 @@ from celery.schedules import crontab
 CELERY_BEAT_SCHEDULE = {
     'ingest-news-every-10-minutes': {
         'task': 'apps.knowledge_base.tasks.fast_ingest_and_save_task',
-        'schedule': 600.0, # Every 10 minutes
+        'schedule': 600.0,  # Every 10 minutes (HN & RSS)
     },
     'scrape-news-every-10-minutes': {
         'task': 'apps.knowledge_base.tasks.background_scrape_all_pending_task',
-        'schedule': 600.0, # Every 10 minutes
+        'schedule': 600.0,  # Every 10 minutes
+    },
+    'ingest-github-releases-every-hour': {
+        'task': 'apps.knowledge_base.tasks.ingest_github_releases_task',
+        'schedule': 3600.0,  # Every 1 hour
+    },
+    'ingest-arxiv-papers-every-6-hours': {
+        'task': 'apps.knowledge_base.tasks.ingest_arxiv_papers_task',
+        'schedule': 21600.0,  # Every 6 hours
     },
 }
 
 # Rate Limiting
 RATELIMIT_USE_CACHE = 'default'
 
-# Microservice Configuration
+# Microservice Configuration & Inter-Service Security
 MICROSERVICE_URL = os.getenv('MICROSERVICE_URL', 'http://localhost:8001')
+INTERNAL_SERVICE_KEY = os.getenv('INTERNAL_SERVICE_KEY', 'signalreport_enterprise_internal_shared_secret_2026')
+
+# JWT Authentication Configuration
+JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)
+JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
+
+
 

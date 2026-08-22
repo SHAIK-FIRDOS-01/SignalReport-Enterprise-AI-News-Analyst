@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -49,6 +50,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ('ADMIN', 'Admin'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STANDARD')
+
+    # Monetization & AI Usage Gating Fields
+    ai_calls_used = models.IntegerField(
+        default=0,
+        help_text=_('Tracks the number of AI requests made by the user against the freemium quota')
+    )
+    payment_method_active = models.BooleanField(
+        default=False,
+        help_text=_('Flag indicating if the user has added an active payment method to unlock unlimited AI access')
+    )
 
     # MFA Readiness Fields
     mfa_enabled = models.BooleanField(default=False)

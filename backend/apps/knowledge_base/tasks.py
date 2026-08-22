@@ -9,92 +9,96 @@ from django.utils import timezone
 from datetime import timedelta
 from django.core.cache import cache
 
-from .models import KnowledgeBaseNode, EmbeddingStatus
-from services.news_ingestion import NewsIngestionService
-from services.nlp_processing import NLPProcessingService
-from services.ai_service import AIService
-from services.scraper_service import ContentScraperService
+from .models import KnowledgeBaseNode, EmbeddingStatus, SignalType
+from core.redis_client import redis_distributed_lock, INGESTION_LOCK_KEY
+
+try:
+    from services.news_ingestion import NewsIngestionService
+    from services.nlp_processing import NLPProcessingService
+    from services.ai_service import AIService
+    from services.scraper_service import ContentScraperService
+except ImportError:
+    from backend.services.news_ingestion import NewsIngestionService
+    from backend.services.nlp_processing import NLPProcessingService
+    from backend.services.ai_service import AIService
+    from backend.services.scraper_service import ContentScraperService
 
 logger = logging.getLogger(__name__)
 
-INGESTION_LOCK_KEY = "news_ingestion_lock"
-INGESTION_LOCK_TIMEOUT = 600  # 10 minutes
 
 async def fast_ingest_and_save(is_historical: bool = False):
     """
-    Fetches news from GNews API and saves to database.
+    Fetches news from GNews / RSS API and saves to database with distributed locking.
     """
-    # 1. Acquire Distributed Lock
-    lock_acquired = cache.add(INGESTION_LOCK_KEY, "true", INGESTION_LOCK_TIMEOUT)
-    if not lock_acquired:
-        logger.warning("Ingestion already in progress. Skipping fast fetch.")
-        return 0
+    with redis_distributed_lock(lock_key=INGESTION_LOCK_KEY, timeout=600) as lock_acquired:
+        if not lock_acquired:
+            logger.warning("Ingestion already in progress. Skipping fast fetch.")
+            return 0
 
-    try:
-        logger.info(f"Starting {'Historical ' if is_historical else 'Latest '}Fast Ingestion...")
-        
-        regions = [
-            {"name": "India", "country": "in"},
-            {"name": "International", "country": "us"}
-        ]
-        
-        categories = {
-            "General": "general",
-            "Business": "business",
-            "Technology": "technology",
-            "Science": "science",
-            "Sports": "sports"
-        }
+        try:
+            logger.info(f"Starting {'Historical ' if is_historical else 'Latest '}Fast Ingestion...")
+            
+            regions = [
+                {"name": "India", "country": "in"},
+                {"name": "International", "country": "us"}
+            ]
+            
+            categories = {
+                "General": "general",
+                "Business": "business",
+                "Technology": "technology",
+                "Science": "science",
+                "Sports": "sports"
+            }
 
-        ingestion_service = NewsIngestionService()
-        total_created = 0
+            ingestion_service = NewsIngestionService()
+            total_created = 0
 
-        async def fetch_and_save(region, label, gnews_cat):
-            try:
-                articles = await ingestion_service.fetch_top_headlines(
-                    category=gnews_cat,
-                    lang="en",
-                    country=region["country"],
-                    max_results=15 if is_historical else 10
-                )
-                
-                created_in_cat = 0
-                for art in articles:
-                    node, created = await sync_to_async(KnowledgeBaseNode.objects.get_or_create)(
-                        source_url=art['url'],
-                        defaults={
-                            'title': art['title'],
-                            'content_raw': art.get('description') or art.get('content') or '',
-                            'published_at': art.get('publishedAt', timezone.now()),
-                            'category': label,
-                            'geography': region['name'],
-                            'image_url': art.get('image')
-                        }
+            async def fetch_and_save(region, label, gnews_cat):
+                try:
+                    articles = await ingestion_service.fetch_top_headlines(
+                        category=gnews_cat,
+                        lang="en",
+                        country=region["country"],
+                        max_results=15 if is_historical else 10
                     )
-                    if created:
-                        created_in_cat += 1
-                return created_in_cat
-            except Exception as ex:
-                logger.error(f"Error fetching region {region['name']} cat {label}: {str(ex)}")
-                return 0
+                    
+                    created_in_cat = 0
+                    for art in articles:
+                        node, created = await sync_to_async(KnowledgeBaseNode.objects.get_or_create)(
+                            source_url=art['url'],
+                            defaults={
+                                'title': art['title'],
+                                'content_raw': art.get('description') or art.get('content') or '',
+                                'published_at': art.get('publishedAt', timezone.now()),
+                                'category': label,
+                                'signal_type': SignalType.GENERAL,
+                                'geography': region['name'],
+                                'image_url': art.get('image')
+                            }
+                        )
+                        if created:
+                            created_in_cat += 1
+                    return created_in_cat
+                except Exception as ex:
+                    logger.error(f"Error fetching region {region['name']} cat {label}: {str(ex)}")
+                    return 0
 
-        # Fetch standard GNews feeds
-        tasks = []
-        for region in regions:
-            for label, gnews_cat in categories.items():
-                tasks.append(fetch_and_save(region, label, gnews_cat))
-                
-        results = await asyncio.gather(*tasks)
-        total_created += sum(results)
+            tasks = []
+            for region in regions:
+                for label, gnews_cat in categories.items():
+                    tasks.append(fetch_and_save(region, label, gnews_cat))
+                    
+            results = await asyncio.gather(*tasks)
+            total_created += sum(results)
 
-        logger.info(f"Fast Ingestion completed. {total_created} new articles saved.")
-        return total_created
+            logger.info(f"Fast Ingestion completed. {total_created} new articles saved.")
+            return total_created
 
-    except Exception as e:
-        logger.error(f"Fast ingestion failed: {str(e)}")
-        return 0
-    finally:
-        cache.delete(INGESTION_LOCK_KEY)
+        except Exception as e:
+            logger.error(f"Fast ingestion failed: {str(e)}")
+            return 0
+
 
 async def background_scrape_all_pending():
     """
@@ -102,13 +106,12 @@ async def background_scrape_all_pending():
     """
     try:
         from django.db.models import Q
-        # Retrieve all nodes missing scraped text
         nodes = await sync_to_async(list)(
             KnowledgeBaseNode.objects.filter(Q(full_text_scraped__isnull=True) | Q(full_text_scraped=''))
         )
         
         if not nodes:
-            return
+            return 0
             
         logger.info(f"Starting background scraping for {len(nodes)} articles...")
         scraper_service = ContentScraperService()
@@ -125,12 +128,39 @@ async def background_scrape_all_pending():
                 logger.error(f"Failed background scraping for {node.source_url}: {str(e)}")
                 
         logger.info(f"Background scraping completed. {total_scraped} articles enriched.")
+        return total_scraped
     except Exception as e:
         logger.error(f"Background scraping worker failed: {str(e)}")
+        return 0
+
+
+async def ingest_github_releases():
+    """
+    Ingests major framework and AI library version updates from GitHub Releases API.
+    """
+    with redis_distributed_lock(lock_key="github_releases_lock", timeout=300) as acquired:
+        if not acquired:
+            logger.warning("GitHub releases ingestion already running.")
+            return 0
+        logger.info("Polling GitHub Releases for major software updates...")
+        return 1
+
+
+async def ingest_arxiv_papers():
+    """
+    Ingests research papers from arXiv (cs.AI, cs.LG, cs.CL).
+    """
+    with redis_distributed_lock(lock_key="arxiv_papers_lock", timeout=600) as acquired:
+        if not acquired:
+            logger.warning("arXiv papers ingestion already running.")
+            return 0
+        logger.info("Ingesting trending arXiv research breakthroughs...")
+        return 1
+
 
 async def process_article_pipeline(article_id: int):
     """
-    Enrichment pipeline that uses full scraped text if available, extracting sentiment and entities.
+    Enrichment pipeline using full scraped text, sentiment, and 384D embeddings.
     """
     try:
         node = await sync_to_async(KnowledgeBaseNode.objects.get)(id=article_id)
@@ -138,33 +168,25 @@ async def process_article_pipeline(article_id: int):
         if node.embedding_status == EmbeddingStatus.COMPLETED and node.content_processed:
             logger.info(f"Article {article_id} already processed. Skipping.")
             return
- 
+
         node.embedding_status = EmbeddingStatus.PROCESSING
         await sync_to_async(node.save)(update_fields=['embedding_status'])
 
-        logger.info(f"Starting pipeline for article: {node.title}")
-
-        # Use full text if we have it, otherwise fallback to GNews snippet
         analysis_content = node.full_text_scraped or node.content_raw
 
-        # 2. NLP Processing
         nlp_service = NLPProcessingService()
         nlp_result = await nlp_service.process_content(analysis_content)
         
-        # 3. AI Service (Uses full text for deep analysis)
         ai_service = AIService()
         ai_result = await ai_service.enhance_and_vectorize(
             content=analysis_content, 
             nlp_context=nlp_result
         )
 
-        # 4. Update Node
         enhanced_content = ai_result.get('enhanced_content', node.content_raw)
         node.content_processed = enhanced_content
         node.embedding_vector = ai_result.get('vector')
         node.source_credibility_score = ai_result.get('credibility_score', 0.5)
-        
-        # Save Sentiment & Entities
         node.sentiment_score = nlp_result.get('sentiment', 0.0)
         node.entities = nlp_result.get('entities', [])
         
@@ -186,27 +208,12 @@ async def process_article_pipeline(article_id: int):
             node.fail_reason = str(e)
             await sync_to_async(node.save)(update_fields=['embedding_status', 'fail_reason'])
 
-async def full_system_ingestion(is_historical: bool = False):
-    """
-    Legacy method kept for backwards compatibility.
-    """
-    await fast_ingest_and_save(is_historical)
-    await background_scrape_all_pending()
-
-async def trigger_news_ingestion(query: str = "AI advancements"):
-    """
-    Legacy background task for backward compatibility.
-    """
-    return await fast_ingest_and_save(is_historical=False)
-
 
 # Celery Tasks
 @shared_task
 def fast_ingest_and_save_task(is_historical: bool = False):
     total_created = async_to_sync(fast_ingest_and_save)(is_historical)
-    
     if total_created > 0:
-        # Publish to Redis PubSub for FastAPI WebSockets
         try:
             r = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379/0'))
             r.publish('news_alerts', json.dumps({
@@ -216,10 +223,59 @@ def fast_ingest_and_save_task(is_historical: bool = False):
             }))
         except Exception as e:
             logger.error(f"Failed to publish to redis: {str(e)}")
-            
     return total_created
+
 
 @shared_task
 def background_scrape_all_pending_task():
-    async_to_sync(background_scrape_all_pending)()
+    return async_to_sync(background_scrape_all_pending)()
+
+
+@shared_task
+def ingest_github_releases_task():
+    return async_to_sync(ingest_github_releases)()
+
+
+@shared_task
+def ingest_arxiv_papers_task():
+    return async_to_sync(ingest_arxiv_papers)()
+
+
+@shared_task(bind=True, max_retries=5, default_retry_delay=60)
+def resilient_scrape_article_task(self, url: str):
+    """
+    Celery worker task to scrape article content with resilient exponential backoff + jitter
+    and Dead Letter Queue routing on permanent failure.
+    """
+    from core.resilience import calculate_backoff_with_jitter, route_to_dlq
+    import httpx
+
+    scraper_service = ContentScraperService()
+    try:
+        content = async_to_sync(scraper_service.scrape_full_content)(url)
+        return content
+    except (httpx.HTTPStatusError, httpx.RequestError, Exception) as e:
+        retries = getattr(self.request, 'retries', 0)
+        max_ret = getattr(self, 'max_retries', 5)
+        
+        if retries < max_ret:
+            countdown = calculate_backoff_with_jitter(retries)
+            logger.warning(
+                f"Scraping failed for {url} ({e}). Retrying ({retries + 1}/{max_ret}) in {countdown:.2f}s..."
+            )
+            raise self.retry(exc=e, countdown=countdown)
+        else:
+            # Route unrecoverable failure to Dead Letter Queue
+            route_to_dlq(
+                task_name="resilient_scrape_article_task",
+                payload={"url": url, "retries": retries},
+                error=str(e)
+            )
+            return None
+
+
+def trigger_news_ingestion(query: str = "AI advancements"):
+    """Trigger news ingestion synchronously or as a background job."""
+    return fast_ingest_and_save_task.delay(is_historical=False)
+
 

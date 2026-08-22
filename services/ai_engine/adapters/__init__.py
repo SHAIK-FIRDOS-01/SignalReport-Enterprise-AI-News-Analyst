@@ -1,0 +1,1 @@
+"""SignalReport Ingestion Adapters Subsystem."""
