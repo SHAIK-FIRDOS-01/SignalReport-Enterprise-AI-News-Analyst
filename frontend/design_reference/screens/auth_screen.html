@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_blank" name="shell-type"/><title>DISPATCH — Authentication</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-container": "#eeeeee", "on-primary": "#ffffff", "surface": "#f9f9f9", "tertiary-fixed-dim": "#c6c6c6", "inverse-surface": "#2f3131", "on-surface-variant": "#4c4546", "on-tertiary": "#ffffff", "surface-container-lowest": "#ffffff", "background": "#f9f9f9", "on-secondary-fixed-variant": "#930007", "inverse-primary": "#c6c6c6", "on-secondary": "#ffffff", "error": "#ba1a1a", "surface-container-high": "#e8e8e8", "primary-fixed": "#e2e2e2", "outline": "#7e7576", "on-tertiary-fixed": "#1b1b1b", "primary-fixed-dim": "#c6c6c6", "primary-container": "#1b1b1b", "on-surface": "#1a1c1c", "tertiary": "#000000", "on-primary-container": "#848484", "inverse-on-surface": "#f0f1f1", "error-container": "#ffdad6", "on-secondary-container": "#fffbff", "tertiary-container": "#1b1b1b", "surface-dim": "#dadada", "secondary": "#bc000c", "surface-container-highest": "#e2e2e2", "primary": "#000000", "on-secondary-fixed": "#410001", "on-primary-fixed": "#1b1b1b", "on-primary-fixed-variant": "#474747", "on-tertiary-container": "#848484", "outline-variant": "#cfc4c5", "surface-tint": "#5e5e5e", "secondary-fixed": "#ffdad5", "surface-container-low": "#f3f3f4", "secondary-fixed-dim": "#ffb4aa", "on-tertiary-fixed-variant": "#474747", "tertiary-fixed": "#e2e2e2", "surface-variant": "#e2e2e2", "on-background": "#1a1c1c", "secondary-container": "#e80f16", "on-error": "#ffffff", "surface-bright": "#f9f9f9", "on-error-container": "#93000a" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "space-lg": "2rem", "space-sm": "1rem", "space-md": "1.5rem", "margin": "2rem", "margin-mobile": "1rem", "space-xl": "3rem", "space-xs": "0.5rem", "gutter-sm": "1rem" }, "fontFamily": { "body-sm": ["Inter"], "label-uppercase": ["Inter"], "headline-md": ["Inter"], "display-xl-mobile": ["Inter"], "headline-sm": ["Inter"], "body-lead": ["Inter"], "meta-index": ["Inter"], "label-regular": ["Inter"], "display-xl": ["Inter"], "headline-lg": ["Inter"], "body-md": ["Inter"], "headline-lg-mobile": ["Inter"] }, "fontSize": { "body-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "label-uppercase": ["11px", { "lineHeight": "16px", "letterSpacing": "0.12em", "fontWeight": "700" }], "headline-md": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "display-xl-mobile": ["48px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "900" }], "headline-sm": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "body-lead": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "400" }], "meta-index": ["48px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "900" }], "label-regular": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "400" }], "display-xl": ["96px", { "lineHeight": "96px", "letterSpacing": "-0.04em", "fontWeight": "900" }], "headline-lg": ["56px", { "lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "900" }], "body-md": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg-mobile": ["36px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "900" }] } } } };</script></head><body class="bg-surface-container-lowest text-primary font-body-md text-body-md antialiased selection:bg-secondary-container selection:text-on-secondary min-h-screen flex flex-col justify-between"><div class="w-full border-b-[3px] border-primary px-margin py-space-sm"><a class="font-display-xl text-headline-sm uppercase tracking-tighter text-primary no-underline select-none" data-path="front-page" href="#">NEWS<span class="text-secondary-container">.</span></a></div><main class="w-full flex-1 flex items-center justify-center p-margin"><div class="flex flex-col w-full max-w-[1440px] mx-auto min-w-0">
+<div class="grid grid-cols-1 lg:grid-cols-12 w-full border-t border-b border-primary">
+<div class="lg:col-span-5 flex flex-col justify-between py-space-xl pr-0 lg:pr-space-xl border-b lg:border-b-0 lg:border-r border-primary">
+<div class="flex flex-col">
+<div class="mb-space-xl">
+<div class="font-display-xl text-headline-lg tracking-tighter text-primary uppercase select-none leading-none">
+            NEWS<span class="text-secondary-container">.</span>
+</div>
+<div class="mt-space-xs font-label-uppercase text-label-uppercase tracking-[0.15em] text-primary">
+            INTERNATIONAL EDITION — ARCHIVE &amp; DISPATCH SYSTEM
+          </div>
+</div>
+<div class="flex items-center gap-space-lg mb-space-xl border-b border-primary/20 pb-space-xs">
+<button class="relative pb-space-xs font-label-uppercase text-[13px] tracking-[0.15em] text-primary uppercase transition-colors" id="tab-login">
+            LOG IN
+            <span class="absolute bottom-[-1px] left-0 w-full h-[2px] bg-secondary-container" id="tab-indicator"></span>
+</button>
+<button class="relative pb-space-xs font-label-uppercase text-[13px] tracking-[0.15em] text-primary/40 uppercase hover:text-primary transition-colors" id="tab-signup">
+            SIGN UP
+          </button>
+</div>
+<form class="flex flex-col space-y-space-lg" id="auth-form" onsubmit="event.preventDefault();">
+<div class="flex flex-col group">
+<label class="font-label-uppercase text-[11px] tracking-[0.15em] text-primary mb-space-xs" for="credential">
+              01 / OPERATOR CREDENTIAL (EMAIL)
+            </label>
+<input autocomplete="email" class="w-full h-[44px] bg-transparent border-0 border-b border-primary text-primary font-body-md text-body-md placeholder:text-outline-variant rounded-none px-0 py-space-xs focus:ring-0 focus:border-b-2 focus:border-secondary-container focus:outline-none transition-all" id="credential" placeholder="OPERATOR@DISPATCH.CH" required="" type="email" value="vignelli@dispatch.ch"/>
+</div>
+<div class="flex flex-col group">
+<div class="flex justify-between items-baseline mb-space-xs">
+<label class="font-label-uppercase text-[11px] tracking-[0.15em] text-primary" for="passphrase">
+                02 / PASSPHRASE
+              </label>
+<a class="font-label-uppercase text-[10px] tracking-[0.15em] text-outline hover:text-secondary-container transition-colors uppercase" href="#">
+                RECOVER KEY
+              </a>
+</div>
+<input autocomplete="current-password" class="w-full h-[44px] bg-transparent border-0 border-b border-primary text-primary font-body-md text-body-md placeholder:text-outline-variant rounded-none px-0 py-space-xs focus:ring-0 focus:border-b-2 focus:border-secondary-container focus:outline-none transition-all tracking-[0.25em]" id="passphrase" placeholder="••••••••••••••••" required="" type="password" value="massimo-unimark-1972"/>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="inline-block w-2 h-2 bg-secondary-container"></span>
+<span class="font-label-uppercase text-[10px] tracking-[0.15em] text-secondary-container">
+                SESSION ENCRYPTED — 4096-BIT RSA
+              </span>
+</div>
+<span class="font-label-uppercase text-[10px] tracking-[0.15em] text-outline">
+              REF: 884-ZH
+            </span>
+</div>
+<div class="pt-space-md">
+<button class="w-full h-[52px] bg-primary text-on-primary font-label-uppercase text-label-uppercase tracking-[0.2em] rounded-none px-space-md flex items-center justify-between hover:bg-secondary-container active:outline active:outline-2 active:outline-offset-[-2px] active:outline-secondary-container transition-colors duration-100" id="submit-btn" type="submit">
+<span>SIGN IN</span>
+<span class="font-display-xl text-headline-sm leading-none">→</span>
+</button>
+</div>
+<div class="pt-space-xs">
+<a class="inline-block font-label-uppercase text-[11px] tracking-[0.15em] text-primary uppercase" href="#" id="switch-link">
+              NO ACCOUNT? — <span class="hover:underline hover:decoration-secondary-container hover:decoration-1 underline-offset-4">SIGN UP</span>
+</a>
+</div>
+</form>
+</div>
+<div class="mt-space-xl pt-space-md border-t border-primary">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-space-xs">
+<p class="font-label-uppercase text-[10px] tracking-[0.15em] text-primary">
+            SYSTEM V.4.2 // BASEL — ZÜRICH
+          </p>
+<p class="font-label-uppercase text-[10px] tracking-[0.15em] text-outline">
+            ALL RIGHTS RESERVED
+          </p>
+</div>
+</div>
+</div>
+<div class="lg:col-span-7 relative flex flex-col justify-between p-space-lg lg:p-space-xl overflow-hidden bg-surface-container-lowest select-none">
+<div class="flex justify-between items-start w-full border-b border-primary/20 pb-space-sm">
+<div class="flex flex-col">
+<span class="font-label-uppercase text-[11px] tracking-[0.2em] text-primary">
+            THE INTERNATIONAL DISPATCH MONOGRAPH
+          </span>
+<span class="font-label-uppercase text-[10px] tracking-[0.15em] text-outline mt-0.5">
+            VOL. XXIV / ISSUED DAILY / TERMINAL ACCESS
+          </span>
+</div>
+<div class="hidden sm:flex items-center gap-space-xs font-label-uppercase text-[11px] tracking-[0.2em] text-primary border border-primary px-space-xs py-0.5">
+<span>GRID: 12-COL RATIO</span>
+</div>
+</div>
+<div class="my-auto py-space-xl flex flex-col justify-center">
+<div class="font-display-xl text-[140px] sm:text-[200px] lg:text-[240px] leading-[0.8] tracking-[-0.05em] font-black text-primary select-none -ml-1">
+          N°<span class="text-secondary-container">01</span>
+</div>
+<div class="grid grid-cols-3 gap-space-md mt-space-lg pt-space-md border-t border-primary max-w-xl">
+<div class="flex flex-col">
+<span class="font-label-uppercase text-[10px] tracking-[0.15em] text-outline">EDITION</span>
+<span class="font-headline-sm text-[16px] text-primary font-bold">CIRCULATION</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-uppercase text-[10px] tracking-[0.15em] text-outline">LOCATION</span>
+<span class="font-headline-sm text-[16px] text-primary font-bold">SWITZERLAND</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-uppercase text-[10px] tracking-[0.15em] text-outline">SECURITY</span>
+<span class="font-headline-sm text-[16px] text-secondary-container font-bold">LEVEL A-1</span>
+</div>
+</div>
+</div>
+<div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-end gap-space-md pt-space-md border-t border-primary">
+<div class="max-w-xs font-body-sm text-[12px] leading-[18px] text-on-surface-variant">
+          Strict International Typographic alignment standards. Designed according to the Müller-Brockmann baseline matrix.
+        </div>
+<div class="font-label-uppercase text-[11px] tracking-[0.2em] text-primary self-end">
+          INDEX ID: 1957-M-09
+        </div>
+</div>
+</div>
+</div>
+<script>
+    (function () {
+      const tabLogin = document.getElementById('tab-login');
+      const tabSignup = document.getElementById('tab-signup');
+      const tabIndicator = document.getElementById('tab-indicator');
+      const submitBtn = document.getElementById('submit-btn');
+      const switchLink = document.getElementById('switch-link');
+      const credentialLabel = document.querySelector('label[for="credential"]');
+      let mode = 'login';
+
+      function setMode(newMode) {
+        mode = newMode;
+        if (mode === 'login') {
+          tabLogin.className = 'relative pb-space-xs font-label-uppercase text-[13px] tracking-[0.15em] text-primary uppercase transition-colors';
+          tabSignup.className = 'relative pb-space-xs font-label-uppercase text-[13px] tracking-[0.15em] text-primary/40 uppercase hover:text-primary transition-colors';
+          tabIndicator.style.display = 'block';
+          submitBtn.querySelector('span:first-child').textContent = 'SIGN IN';
+          credentialLabel.textContent = '01 / OPERATOR CREDENTIAL (EMAIL)';
+          switchLink.innerHTML = 'NO ACCOUNT? — <span class="hover:underline hover:decoration-secondary-container hover:decoration-1 underline-offset-4">SIGN UP</span>';
+        } else {
+          tabSignup.className = 'relative pb-space-xs font-label-uppercase text-[13px] tracking-[0.15em] text-primary uppercase transition-colors';
+          tabLogin.className = 'relative pb-space-xs font-label-uppercase text-[13px] tracking-[0.15em] text-primary/40 uppercase hover:text-primary transition-colors';
+          tabIndicator.style.display = 'none';
+          submitBtn.querySelector('span:first-child').textContent = 'REQUEST CREDENTIALS';
+          credentialLabel.textContent = '01 / DESIRED OPERATOR ID';
+          switchLink.innerHTML = 'HAVE CREDENTIALS? — <span class="hover:underline hover:decoration-secondary-container hover:decoration-1 underline-offset-4">LOG IN</span>';
+        }
+      }
+
+      tabLogin.addEventListener('click', () => setMode('login'));
+      tabSignup.addEventListener('click', () => setMode('signup'));
+      switchLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        setMode(mode === 'login' ? 'signup' : 'login');
+      });
+    })();
+  </script>
+</div></main><div class="w-full border-t border-primary px-margin py-space-xs flex justify-between items-center"><span class="font-label-uppercase text-label-uppercase text-primary">SWISS TYPOGRAPHIC ARCHITECTURE</span><span class="font-label-uppercase text-label-uppercase text-primary">TERMINAL 01</span></div></body></html>

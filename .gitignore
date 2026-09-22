@@ -112,7 +112,10 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+.env.local
 .venv
+.venv/
 env/
 venv/
 ENV/
@@ -166,3 +169,32 @@ frontend/.pnpm-debug.log*
 
 # Scratch scripts
 scratch/
+
+# Node.js dependencies & build
+node_modules/
+dist/
+
+# AI Agent IDE Customizations & Skills (Local Only)
+.agents/
+skills-lock.json
+
+# Security proxy (held back for dedicated showcase commit)
+security_proxy.py
+app/core/security_proxy.py
+backend/app/core/security_proxy.py
+**/security_proxy.py
+
+# Tests
+tests/
+backend/tests/
+
+# Code documentation mirror markdown files (preserve primary docs)
+*.md
+!README.md
+!README.*.md
+!AGENTS.md
+!LICENSE.md
+
+# PDF generation build artifacts
+mermaid.min.js
+report_rendered.html
