@@ -19,6 +19,7 @@ export function ArticleCard({
   onToggleBookmark,
   onToggleRead,
   onShare,
+  onAnalyze,
   className = '',
 }) {
   if (!article) return null;
@@ -95,6 +96,17 @@ export function ArticleCard({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {onAnalyze && (
+            <button
+              type="button"
+              onClick={() => onAnalyze(article)}
+              aria-label="AI Brief"
+              className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider border border-swiss-black bg-swiss-black text-swiss-white hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <span>⚡</span> BRIEF
+            </button>
+          )}
+
           {onToggleBookmark && (
             <button
               type="button"

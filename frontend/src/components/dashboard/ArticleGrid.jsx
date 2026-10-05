@@ -25,32 +25,35 @@ export function ArticleGrid({
   onToggleBookmark,
   onToggleRead,
   onShare,
+  onAnalyze,
   className = '',
 }) {
-  if (isLoading && (!articles || articles.length === 0)) {
+  const safeArticles = Array.isArray(articles) ? articles : (articles?.items || []);
+
+  if (isLoading && safeArticles.length === 0) {
     return (
       <div className={`w-full p-12 border-2 border-swiss-black bg-swiss-white text-center select-none ${className}`}>
         <div className="flex items-center justify-center gap-3">
           <span className="w-3 h-3 bg-swiss-red animate-pulse inline-block" />
           <span className="text-sm font-mono font-bold uppercase tracking-widest text-swiss-black">
-            SYNCHRONIZING FEED DISPATCHES...
+            SYNCHRONIZING FEED // EDITORIAL WIRE...
           </span>
         </div>
       </div>
     );
   }
 
-  if (!articles || articles.length === 0) {
+  if (safeArticles.length === 0) {
     return (
       <div className={`w-full p-12 border-2 border-swiss-black bg-swiss-white text-center select-none ${className}`}>
         <p className="text-sm font-mono font-bold uppercase tracking-widest text-neutral-500">
-          NO DISPATCHES FOUND FOR ACTIVE FILTER // ARCHIVE EMPTY
+          NO DISPATCHES FOUND FOR ACTIVE FILTER // FEED EMPTY
         </p>
       </div>
     );
   }
 
-  const [leadStory, ...secondaryStories] = articles;
+  const [leadStory, ...secondaryStories] = safeArticles;
 
   return (
     <div className={`w-full flex flex-col ${className}`}>
@@ -60,6 +63,7 @@ export function ArticleGrid({
         onToggleBookmark={onToggleBookmark}
         onToggleRead={onToggleRead}
         onShare={onShare}
+        onAnalyze={onAnalyze}
       />
 
       {/* Multi-Column Grid for Secondary Feed Dispatches */}
@@ -73,6 +77,7 @@ export function ArticleGrid({
               onToggleBookmark={onToggleBookmark}
               onToggleRead={onToggleRead}
               onShare={onShare}
+              onAnalyze={onAnalyze}
             />
           ))}
         </div>

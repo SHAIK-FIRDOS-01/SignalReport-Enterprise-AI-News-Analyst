@@ -35,7 +35,7 @@ export function SharePage({ shareToken, onNavigateHome }) {
       })
       .catch((err) => {
         if (!isMounted) return;
-        setError(err.detail || '404 // DOSSIER NOT FOUND OR EXPIRED');
+        setError(err.detail || '404 // REPORT NOT FOUND OR EXPIRED');
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
@@ -75,7 +75,7 @@ export function SharePage({ shareToken, onNavigateHome }) {
             </h1>
           </div>
           <p className="text-xs font-mono text-neutral-600 mb-6 uppercase">
-            {error || 'THE REQUESTED DISPATCH TOKEN IS INVALID OR HAS BEEN REVOKED.'}
+            {error || 'THE REQUESTED REPORT TOKEN IS INVALID OR HAS BEEN REVOKED.'}
           </p>
           {onNavigateHome && (
             <button
@@ -83,7 +83,7 @@ export function SharePage({ shareToken, onNavigateHome }) {
               onClick={onNavigateHome}
               className="px-6 py-2 border-2 border-swiss-black bg-swiss-black text-swiss-white text-xs font-bold uppercase tracking-wider hover:bg-swiss-white hover:text-swiss-black transition-colors cursor-pointer"
             >
-              ← RETURN TO TERMINAL
+              ← RETURN TO NEWS FEED
             </button>
           )}
         </div>
@@ -104,7 +104,7 @@ export function SharePage({ shareToken, onNavigateHome }) {
               SIGNAL REPORT<span className="text-swiss-red">.</span>
             </span>
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 hidden sm:inline">
-              // PUBLIC DISPATCH DOSSIER
+              // PUBLIC ARTICLE BRIEF
             </span>
           </div>
 
@@ -114,7 +114,7 @@ export function SharePage({ shareToken, onNavigateHome }) {
               onClick={onNavigateHome}
               className="text-xs font-bold uppercase tracking-wider border border-swiss-black px-3 py-1 hover:bg-swiss-black hover:text-swiss-white transition-colors cursor-pointer"
             >
-              OPERATOR TERMINAL →
+              MAIN NEWS DESK →
             </button>
           )}
         </div>
@@ -189,7 +189,7 @@ export function SharePage({ shareToken, onNavigateHome }) {
 
       {/* Editorial Footer */}
       <footer className="border-t-2 border-swiss-black p-6 bg-swiss-white text-center text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 select-none">
-        SIGNAL REPORT // OPEN DISPATCH REGISTRY // STRICT ZERO TOKEN RETENTION
+        SIGNAL REPORT // INTELLIGENCE REGISTRY // STRICT ZERO TOKEN RETENTION
       </footer>
     </div>
   );

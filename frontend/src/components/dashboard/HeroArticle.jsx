@@ -17,6 +17,7 @@ export function HeroArticle({
   onToggleBookmark,
   onToggleRead,
   onShare,
+  onAnalyze,
   className = '',
 }) {
   if (!article) return null;
@@ -56,7 +57,7 @@ export function HeroArticle({
               data-testid="hero-image-placeholder"
               className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 text-neutral-600 font-mono text-xs font-bold uppercase tracking-widest p-4 text-center"
             >
-              <span>[NO VISUAL DISPATCH ARCHIVED]</span>
+              <span>[NO VISUAL REPORT ARCHIVED]</span>
               <span className="text-[10px] text-neutral-400 mt-1">
                 REF: {article.id || 'SEC-01'}
               </span>
@@ -91,6 +92,17 @@ export function HeroArticle({
         </div>
 
         <div className="flex items-center gap-2">
+          {onAnalyze && (
+            <button
+              type="button"
+              onClick={() => onAnalyze(article)}
+              aria-label="AI Intelligence Brief"
+              className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider border-2 border-swiss-black bg-swiss-black text-swiss-white hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span>⚡</span> AI BRIEF
+            </button>
+          )}
+
           {onToggleBookmark && (
             <button
               type="button"

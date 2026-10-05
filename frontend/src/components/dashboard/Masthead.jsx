@@ -23,7 +23,7 @@ export function Masthead({
   const [currentDateString, setCurrentDateString] = useState(() => getFormattedIstDate());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const userEmail = typeof user === 'string' ? user : user?.email || 'OPERATOR@DISPATCH.CH';
+  const userEmail = typeof user === 'string' ? user : user?.email || 'analyst@signalreport.io';
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -66,7 +66,7 @@ export function Masthead({
         <div className="flex items-center gap-3">
           <span className="w-3 h-3 bg-swiss-red inline-block" />
           <span className="text-xs font-mono font-bold tracking-widest uppercase text-swiss-black">
-            DISPATCH SYSTEM · ZÜRICH / HYDERABAD
+            EDITORIAL WIRE · SIGNALREPORT / HYDERABAD
           </span>
         </div>
 
@@ -106,7 +106,7 @@ export function Masthead({
             SIGNAL REPORT<span className="text-swiss-red">.</span>
           </h1>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500 mt-2">
-            INTERNATIONAL INTELLIGENCE &amp; ANALYTICAL DISPATCH
+            ENTERPRISE AI NEWS INTELLIGENCE &amp; ANALYTICAL REPORTS
           </p>
         </div>
 

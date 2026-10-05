@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { AuthPosterLayout } from './components/auth/AuthPosterLayout.jsx';
 import { LoginForm } from './components/auth/LoginForm.jsx';
 import { RegisterForm } from './components/auth/RegisterForm.jsx';
-import { OtpVerification } from './components/auth/OtpVerification.jsx';
 import { DashboardPage } from './pages/DashboardPage.jsx';
 import { SharePage } from './pages/SharePage.jsx';
 import { NetworkBanner } from './components/ui/NetworkBanner.jsx';
 import { SwissErrorBoundary } from './components/ui/SwissErrorBoundary.jsx';
+import { api } from './lib/api.js';
+import { API_ROUTES } from './lib/constants.js';
 
 /**
  * Root Application Shell.
@@ -20,7 +21,7 @@ export function App() {
       const hash = (window.location.hash || '').toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const queryView = params.get('view')?.toUpperCase();
-      if (queryView && ['LOGIN', 'REGISTER', 'OTP', 'DASHBOARD', 'SHARE'].includes(queryView)) {
+      if (queryView && ['LOGIN', 'REGISTER', 'DASHBOARD', 'SHARE'].includes(queryView)) {
         return queryView;
       }
       if (path.startsWith('/share/') || hash.startsWith('#share')) {
@@ -31,9 +32,6 @@ export function App() {
       }
       if (path.includes('register') || hash.includes('register')) {
         return 'REGISTER';
-      }
-      if (path.includes('otp') || hash.includes('otp')) {
-        return 'OTP';
       }
     }
     return 'LOGIN';
@@ -47,11 +45,19 @@ export function App() {
     return 'share-sample-01';
   });
 
+  // Keep routing synced with browser history (back/forward and URL paths)
   useEffect(() => {
     function handlePopState() {
-      if (window.location.pathname.startsWith('/share/')) {
-        setShareToken(window.location.pathname.replace('/share/', ''));
+      const path = window.location.pathname;
+      if (path.startsWith('/share/')) {
+        setShareToken(path.replace('/share/', ''));
         setView('SHARE');
+      } else if (path.includes('dashboard')) {
+        setView('DASHBOARD');
+      } else if (path.includes('register')) {
+        setView('REGISTER');
+      } else {
+        setView('LOGIN');
       }
     }
 
@@ -59,36 +65,83 @@ export function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Restore authenticated session on initial mount / page refresh
+  useEffect(() => {
+    let isMounted = true;
+    async function checkAuthSession() {
+      try {
+        const user = await api(API_ROUTES.AUTH.ME);
+        if (isMounted && user && (user.id || user.email)) {
+          setCurrentUser(user);
+          const path = typeof window !== 'undefined' ? window.location.pathname : '';
+          if (!path.startsWith('/share/') && !path.includes('register')) {
+            setView('DASHBOARD');
+            if (typeof window !== 'undefined' && !path.includes('dashboard')) {
+              window.history.replaceState(null, '', '/dashboard');
+            }
+          }
+        }
+      } catch {
+        if (isMounted) {
+          const path = typeof window !== 'undefined' ? window.location.pathname : '';
+          if (path.includes('dashboard')) {
+            setView('LOGIN');
+            if (typeof window !== 'undefined') {
+              window.history.replaceState(null, '', '/');
+            }
+          }
+        }
+      }
+    }
+
+    checkAuthSession();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   function handleRegisterSuccess(email) {
     setPendingEmail(email);
-    setView('OTP');
-  }
-
-  function handleOtpSuccess() {
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/');
+    }
     setView('LOGIN');
   }
 
   function handleLoginSuccess(user) {
-    setCurrentUser(user || { email: pendingEmail || 'operator@signalreport.io' });
+    setCurrentUser(user || { email: pendingEmail || 'analyst@signalreport.io' });
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/dashboard');
+    }
     setView('DASHBOARD');
   }
 
   function handleLogout() {
     setCurrentUser(null);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/');
+    }
     setView('LOGIN');
   }
 
   function handleSelectShareToken(token) {
     setShareToken(token);
-    window.history.pushState(null, '', `/share/${token}`);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', `/share/${token}`);
+    }
     setView('SHARE');
   }
 
   function handleNavigateHome() {
-    window.history.pushState(null, '', '/');
     if (currentUser) {
+      if (typeof window !== 'undefined') {
+        window.history.pushState(null, '', '/dashboard');
+      }
       setView('DASHBOARD');
     } else {
+      if (typeof window !== 'undefined') {
+        window.history.pushState(null, '', '/');
+      }
       setView('LOGIN');
     }
   }
@@ -106,7 +159,7 @@ export function App() {
         {view === 'DASHBOARD' && (
           <SwissErrorBoundary moduleName="INTELLIGENCE_DASHBOARD">
             <DashboardPage
-              user={currentUser || { email: 'operator@signalreport.io' }}
+              user={currentUser || { email: 'analyst@signalreport.io' }}
               onLogout={handleLogout}
               onSelectShareToken={handleSelectShareToken}
             />
@@ -131,12 +184,6 @@ export function App() {
                   />
                 )}
 
-                {view === 'OTP' && (
-                  <OtpVerification
-                    email={pendingEmail || 'operator@signalreport.io'}
-                    onVerifySuccess={handleOtpSuccess}
-                  />
-                )}
               </AuthPosterLayout>
             </main>
           </SwissErrorBoundary>

@@ -6,14 +6,14 @@ import React, { useState, useEffect } from 'react';
  *
  * @param {object} props
  * @param {React.ReactNode} props.children - Auth form content slot
- * @param {string} [props.subtitle='ARCHIVE & DISPATCH SYSTEM'] - Editorial subtitle
- * @param {string} [props.edition='EDITION 2026 // SYSTEM V.4.2'] - System edition identifier
+ * @param {string} [props.subtitle='GLOBAL NEWS & EDITORIAL ARCHIVE'] - Editorial subtitle
+ * @param {string} [props.edition='EDITION 2026 // VOLUME 4.2'] - System edition identifier
  * @param {string} [props.className=''] - Custom root class overrides
  */
 export function AuthPosterLayout({
   children,
-  subtitle = 'ARCHIVE & DISPATCH SYSTEM',
-  edition = 'EDITION 2026 // SYSTEM V.4.2',
+  subtitle = 'GLOBAL NEWS & EDITORIAL ARCHIVE',
+  edition = 'EDITION 2026 // VOLUME 4.2',
   className = '',
 }) {
   const [istTime, setIstTime] = useState(() => getFormattedIstTime());
@@ -44,13 +44,13 @@ export function AuthPosterLayout({
     <div
       className={`w-full max-w-6xl mx-auto border-2 border-swiss-black bg-swiss-white grid grid-cols-1 lg:grid-cols-12 rounded-none overflow-hidden ${className}`}
     >
-      {/* Left Column: Editorial Brand Stack & Terminal Context */}
+      {/* Left Column: Editorial Brand Stack & Publication Context */}
       <div className="lg:col-span-6 p-8 lg:p-12 flex flex-col justify-between border-b-2 lg:border-b-0 lg:border-r-2 border-swiss-black bg-swiss-white select-none">
         <div>
           <div className="flex items-center gap-2 mb-6">
             <span className="w-3 h-3 bg-swiss-red inline-block" />
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-swiss-black">
-              SECURE OPERATOR TERMINAL
+              EDITORIAL ANALYST PORTAL
             </span>
           </div>
           <h1 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter text-swiss-black leading-none mb-3">
@@ -65,18 +65,18 @@ export function AuthPosterLayout({
         </div>
 
         <div className="my-12">
-          <div className="text-7xl lg:text-9xl font-black text-swiss-black tracking-tighter leading-none">
-            N°<span className="text-swiss-red">01</span>
+          <div className="text-7xl lg:text-9xl font-black tracking-tighter leading-none bg-[linear-gradient(180deg,#C81E1E_0%,#000000_100%)] bg-clip-text text-transparent inline-block">
+            24/7
           </div>
           <p className="text-xs font-mono text-neutral-500 uppercase tracking-widest mt-2">
-            TERMINAL CLEARANCE LEVEL: RESTR-4
+            REAL-TIME SYNDICATION &amp; EDITORIAL WIRE
           </p>
         </div>
 
         <div className="pt-6 border-t-2 border-swiss-black flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block">
-              STATION TIME
+              DESK TIME
             </span>
             <span
               data-testid="auth-poster-clock"
@@ -90,7 +90,7 @@ export function AuthPosterLayout({
               LOCATION
             </span>
             <span className="text-xs font-bold uppercase tracking-widest text-swiss-black">
-              HYDERABAD, IN // AP-TEL
+              HYDERABAD, IN // NEWS DESK
             </span>
           </div>
         </div>

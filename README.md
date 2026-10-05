@@ -3,14 +3,15 @@
 # 📰 SignalReport
 ### Enterprise AI News Analyst & Intelligence Platform
 
-*A high-throughput, cryptographically hardened news intelligence platform built with **FastAPI**, **SQLAlchemy 2.0 (Async)**, **PostgreSQL**, and a **Swiss Modernist React** editorial interface.*
+*A high-throughput, cryptographically hardened news intelligence platform built with **Django 5.0**, **Django REST Framework**, **PostgreSQL**, **Groq LPU Intelligence**, and a **Swiss Modernist React 18** editorial interface.*
 
 <br/>
 
-[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%2F18-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0_Async-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.0+-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![DRF](https://img.shields.io/badge/DRF-3.15+-red?style=for-the-badge)](https://www.django-rest-framework.org/)
+[![Groq](https://img.shields.io/badge/Groq-LPU_Inference-F05A28?style=for-the-badge)](https://groq.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2F17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
@@ -18,14 +19,14 @@
 
 <br/>
 
-[System Overview](#-executive-summary) •
-[System Architecture](#-system-architecture) •
-[Architectural Migration](#-architectural-evolution-legacy--lean-stack) •
-[Security Architecture](#-defense-in-depth-security) •
-[Data Pipeline & Search](#-ingestion-pipeline--full-text-search) •
-[Frontend Design](#-swiss-modernist-editorial-frontend) •
-[Quickstart](#-quickstart--local-development) •
-[Architecture Report (PDF)](#-architectural-report--engineering-artifacts)
+[Executive Summary](#-executive-summary) •
+[Full Stack Architecture](#-full-stack-architecture) •
+[Frontend Architecture](#-frontend-architecture) •
+[Backend Architecture](#-backend-architecture) •
+[API Architecture](#-api-architecture) •
+[Core Features](#-core-features) •
+[Security Architecture](#-security-architecture) •
+[Quickstart & Setup](#-quickstart--local-development)
 
 </div>
 
@@ -33,436 +34,448 @@
 
 ## 📌 Executive Summary
 
-**SignalReport** is an enterprise intelligence analyst platform designed for newsrooms, financial analysts, and intelligence operators who need real-time, structured access to syndicated global news across four primary verticals: **Nation**, **Business**, **Technology**, and **General**.
+**SignalReport** is an enterprise intelligence analyst platform designed for newsrooms, financial analysts, and institutional operators who require real-time, curated, and structured intelligence across four primary verticals: **Nation**, **Business**, **Technology**, and **General**.
 
-Engineered with a **Lean Systems** philosophy, the platform eliminates the bloat and operational overhead of traditional multi-tier systems (e.g., Celery workers, Redis message brokers, heavyweight admin panels). Instead, it delivers a unified, high-concurrency ASGI engine capable of sustaining **~1,000 req/min** with sub-50ms API dispatch, zero-dependency in-process scheduling, PostgreSQL GIN full-text search with automatic upstream fall-through, and cryptographically hardened authentication.
+Engineered under the **Lean Systems & High Modularity** philosophy, the platform eliminates unnecessary infrastructure bloat (such as external message brokers, Redis caches, or heavyweight task queues). Instead, it delivers a decoupled, four-domain Django architecture backed by PostgreSQL and powered by Groq LPU in-context artificial intelligence:
 
-### Key Highlights for Technical Evaluators
-* **⚡ High-Concurrency Async Backend**: Pure `async`/`await` architecture powered by FastAPI and SQLAlchemy 2.0 with `asyncpg` connection pooling (20 persistent + 10 overflow connections).
-* **🛡️ Enterprise Security**: Cloudflare edge IP validation (socket CIDR-verified), strict HTTP security headers (HSTS, CSP, XFO), sliding-window brute-force rate limiting, and dual-token JWT with Refresh Token Rotation (RTR) and reuse-attack detection.
-* **🔍 Resilient Search with Upstream Fallback**: Local PostgreSQL GIN full-text index on combined vector fields with automatic, transparent upstream GNews API query fallback when local matches yield zero results.
-* **🎨 Swiss International Typographic UI**: Production React 18 single-page application built on Swiss Modernist design tenets, featuring optimistic UI updates with automatic snapshot rollback on network failure.
-* **📄 Comprehensive 37-Page Architectural Report**: Complete formal technical specification and vector diagrams compiled in [`SignalReport_Architecture_Report.pdf`](SignalReport_Architecture_Report.pdf).
+* **⚡ Clean Modular Domain Isolation**: The backend is architected into 4 focused Django apps: `authentication`, `feed`, `ingestion`, and `intelligence`.
+* **🧠 Groq LPU High-Speed Synthesis**: In-context LLM analysis (`llama-3.3-70b-versatile`) producing executive takeaways, sentiment classification, key entities, and macro impact analysis in <1 second.
+* **🛡️ Multi-Tier Quota & Cooldown Governance**:
+  * **Groq Protection**: 3 allowed requests per user/IP before a strict 4-hour cooldown ban is enforced, with dynamic `Retry-After` headers and rule-based heuristic fallback.
+  * **GNews Protection**: 80-call daily budget guard, 90-minute per-category cooldown window, and a 6-hour HTTP 429 circuit breaker.
+* **🎨 Swiss International Typographic Design**: A production React 18 SPA built with pure React hooks, optimistic UI state management, crash-isolated Swiss Error Boundaries, and zero unsafe HTML injections.
+* **🔒 Enterprise Defensive Security**: Cloudflare edge CIDR socket validation, sliding-window brute-force rate limiters, PBKDF2 password cryptography, and zero-trust IDOR controls.
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ Full Stack Architecture
 
-SignalReport connects an asynchronous upstream ingestion engine, a hardened ASGI application gateway, an ACID-compliant PostgreSQL database, and a responsive Swiss Modernist frontend.
-
-<div align="center">
-  <img src="docs_images/arch_system_topology.jpg" alt="SignalReport System Topology and Real-Time Infrastructure Monitoring GUI" width="95%" />
-  <p><em>Figure 1: SignalReport System Topology & Infrastructure Monitoring Overview</em></p>
-</div>
-
-### End-to-End Data & Request Flow
+The end-to-end architecture connects the browser client, edge perimeter, application gateway, modular domain applications, external syndication and AI providers, and relational persistence.
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Tier (Browser / SPA)"]
-        UI["React 18 + Vite App"]
-        Store["Optimistic UI Store & Cache"]
-        UI <--> Store
+    subgraph ClientTier ["CLIENT TIER (Browser Single-Page Application)"]
+        ReactApp["React 18 + Vite SPA"]
+        SwissUI["Swiss Modernist Design System"]
+        Hooks["Hooks: useNewsFeed, useAuth"]
+        ReactApp --- SwissUI
+        ReactApp --- Hooks
     end
 
-    subgraph Edge ["Edge & Perimeter"]
+    subgraph EdgePerimeter ["EDGE & PERIMETER GATEWAY"]
         CF["Cloudflare Edge Proxy (WAF / DDoS / SSL)"]
+        CF_IP["CF-Connecting-IP Header Injection"]
+        CF --> CF_IP
     end
 
-    subgraph AppGateway ["FastAPI ASGI Gateway (Uvicorn)"]
-        MW1["CloudflareProxyMiddleware (CIDR Trusted Real-IP)"]
-        MW2["SecurityHeadersMiddleware (HSTS, CSP, XFO, nosniff)"]
-        MW3["LoginRateLimitMiddleware (Sliding-Window IP Guard)"]
+    subgraph DjangoGateway ["APPLICATION GATEWAY (Django 5.0 + DRF)"]
+        MW_Proxy["CloudflareProxyMiddleware (CIDR Socket Verification)"]
+        MW_Sec["SecurityHeadersMiddleware (HSTS, CSP, XFO, nosniff)"]
+        MW_Rate["LoginRateLimitMiddleware (Sliding-Window IP Guard)"]
         
-        RouterAuth["Auth Router (/api/v1/auth)"]
-        RouterFeed["Feed Router (/api/v1/feed)"]
-        RouterSearch["Search Router (/api/v1/search)"]
-        RouterInteract["Interactions Router (/bookmarks, /reads, /share)"]
-        
-        MW1 --> MW2 --> MW3
-        MW3 --> RouterAuth & RouterFeed & RouterSearch & RouterInteract
+        MW_Proxy --> MW_Sec --> MW_Rate
     end
 
-    subgraph Services ["Service & Ingestion Layer"]
-        GNews["GNewsClient (Async HTTPX + Resilient Retries)"]
-        Repo["ArticleRepository (Deduplication + Upsert)"]
-        TokenSvc["JWTService (HMAC-SHA256 256-bit Entropy)"]
-        Scheduler["AsyncIO Scheduler Task (2-Hour Interval)"]
-        
-        Scheduler --> GNews
-        GNews --> Repo
+    subgraph ModularApps ["MODULAR DOMAIN APPLICATIONS"]
+        AppAuth["apps.authentication\n• User Model & PBKDF2\n• SimpleJWT Bearer Tokens\n• Instant Analyst Verification"]
+        AppFeed["apps.feed\n• Keyset Cursor Pagination\n• IDOR-Safe Bookmarks\n• Read State & Public Dossiers"]
+        AppIngest["apps.ingestion\n• GNews API Client\n• 80/Day Budget Guard\n• 90m Cooldown & Daemon"]
+        AppIntel["apps.intelligence\n• Groq LPU In-Context Engine\n• 3-Call Limit + 4h Cooldown Ban\n• Heuristic Fallback Analyzer"]
     end
 
-    subgraph DataTier ["Persistence Tier"]
-        PG[(PostgreSQL 17/18 Database)]
-        Pool["asyncpg Connection Pool (20 + 10 Overflow)"]
-        GIN["GIN Full-Text Index (tsvector)"]
-        
-        Pool <--> PG
-        PG --- GIN
+    subgraph ExternalServices ["UPSTREAM API PROVIDERS"]
+        GNewsAPI["GNews API v4 (External News Syndication)"]
+        GroqAPI["Groq LPU Cloud (llama-3.3-70b-versatile)"]
     end
 
-    UI -->|HTTPS / REST| CF
-    CF -->|CF-Connecting-IP| MW1
-    RouterFeed & RouterSearch & RouterInteract <--> Repo
-    RouterAuth <--> TokenSvc
-    Repo <--> Pool
-    TokenSvc <--> Pool
+    subgraph PersistenceTier ["PERSISTENCE TIER (PostgreSQL)"]
+        DB_Users[("users")]
+        DB_Articles[("articles")]
+        DB_Bookmarks[("bookmarks")]
+        DB_Reads[("article_reads")]
+        DB_APILogs[("api_call_logs")]
+        DB_Bans[("llm_usage_bans")]
+        DB_Logs[("llm_usage_logs")]
+    end
+
+    ReactApp -->|"HTTPS / REST (JSON)"| CF
+    CF_IP --> MW_Proxy
+    MW_Rate --> AppAuth & AppFeed & AppIntel
+
+    AppIngest -->|"Fetch News (Round-Robin)"| GNewsAPI
+    AppIntel -->|"Chat Completions (JSON Mode)"| GroqAPI
+
+    AppAuth <--> DB_Users
+    AppFeed <--> DB_Articles & DB_Bookmarks & DB_Reads
+    AppIngest <--> DB_Articles & DB_APILogs
+    AppIntel <--> DB_Bans & DB_Logs
 ```
 
 ---
 
-## 🔄 Architectural Evolution: Legacy → Lean Stack
+## 💻 Frontend Architecture
 
-Early iterations of news intelligence applications typically accumulate infrastructure debt by deploying heavyweight frameworks and distributed task queues prematurely. SignalReport underwent an intentional architectural refactoring from a distributed multi-daemon stack to a high-density, single-process ASGI engine:
-
-<div align="center">
-  <img src="docs_images/arch_data_pipeline.jpg" alt="Data Ingestion and Processing Pipeline" width="95%" />
-  <p><em>Figure 2: Real-Time News Ingestion & Deduplication Pipeline</em></p>
-</div>
-
-### Architectural Trade-off Analysis
-
-| Architecture Concern | Legacy Architecture | Current Lean Architecture | Engineering Rationale |
-|---|---|---|---|
-| **Core Web Framework** | Django 5.0 + DRF | **FastAPI 0.111+** | Native ASGI concurrency, Pydantic v2 validation, OpenAPI 3.1 contract generation. |
-| **Database Driver** | Synchronous psycopg2 | **SQLAlchemy 2.0 + asyncpg** | Non-blocking event loop execution; handles 1,000+ concurrent connections without worker thread starvation. |
-| **Background Ingestion** | Celery Workers + Beat | **Native `asyncio.Task` Scheduler** | Ingestion frequency (48 req/day across 4 categories) does not justify running 2 external queue daemons. |
-| **Message Broker** | Redis Service | **Zero-Dependency In-Process Loop** | Eliminates an entire stateful network dependency and failure domain. |
-| **Rate Limiting** | Redis `INCR` / `EXPIRE` | **Sliding-Window In-Memory Limiter** | Microsecond lookup speeds; memory footprint <2MB for tracking active brute-force candidates. |
-| **Infrastructure Footprint** | 4 daemons (Web, Celery, Beat, Redis) | **1 unified Uvicorn container** | **75% reduction in cloud compute costs** and zero network serialization latency. |
-
-```diff
-- Eliminated: Celery Worker & Beat Daemons
-- Eliminated: Redis Broker & Stateful Cache Container
-- Eliminated: Django Synchronous ORM & Admin Overhead
-+ Adopted: Non-blocking asyncio background polling
-+ Adopted: In-memory sliding-window rate limiting with thread-safe lock
-+ Adopted: Pure asyncpg connection pool with PostgreSQL GIN indexing
-```
-
----
-
-## 🛡️ Defense-in-Depth Security
-
-Security in SignalReport is implemented across four distinct enforcement layers, ensuring protection against credential stuffing, token replay, proxy spoofing, and injection attacks.
-
-<div align="center">
-  <img src="docs_images/arch_security_flow.jpg" alt="Enterprise Security Flow and Token Lifecycle Blueprint" width="95%" />
-  <p><em>Figure 3: Multi-Layer Security Architecture & Token Lifecycle</em></p>
-</div>
-
-### 1. Perimeter & Proxy Integrity (`CloudflareProxyMiddleware`)
-* **CIDR-Verified Real IP**: Parses incoming `CF-Connecting-IP` and `X-Forwarded-For` headers **only** when the immediate TCP socket originates from trusted Cloudflare IP ranges. Untrusted proxy headers are dropped to prevent IP spoofing.
-* **Distributed Tracing**: Injects unique `CF-Ray` identifiers and generates a UUIDv4 `X-Request-ID` for end-to-end request tracing.
-
-### 2. HTTP Hardening (`SecurityHeadersMiddleware`)
-Every response egressing the API gateway is automatically decorated with OWASP-recommended defensive headers:
-```http
-Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'
-X-Frame-Options: DENY
-X-Content-Type-Options: nosniff
-Referrer-Policy: strict-origin-when-cross-origin
-X-XSS-Protection: 0
-```
-
-### 3. Brute-Force Rate Limiter (`LoginRateLimitMiddleware`)
-* Intercepts `POST /api/v1/auth/login` requests.
-* Tracks failed authentication attempts per client IP within a sliding 900-second window.
-* Automatically triggers **HTTP 429 Too Many Requests** with a dynamic `Retry-After` header once the 5-attempt failure threshold is breached.
-
-### 4. Cryptographic Authentication & Token Lifecycle
-* **Dual-Token Architecture**: 15-minute ephemeral JWT Access Token paired with a 14-day persistent Refresh Token stored in a hardened `HttpOnly`, `SameSite=Lax` cookie.
-* **Refresh Token Rotation (RTR)**: Every refresh operation revokes the supplied token and issues a new cryptographic pair.
-* **Reuse Attack Detection**: If an already-invalidated refresh token is presented, the system detects a token theft scenario, flags the token family, and immediately revokes all descendant sessions for that identity.
-* **Instant Session Revocation**: Every user record contains a `tokens_valid_after` timestamp. Password resets or manual sign-out globally invalidate all extant tokens issued prior to that epoch with zero database session lookups.
-* **High Entropy Mandate**: Strict Pydantic startup validation ensures `JWT_SECRET_KEY` maintains a minimum of 256 bits (32 characters) of entropy.
-
----
-
-## 📡 Ingestion Pipeline & Full-Text Search
-
-### Resilient Periodic News Ingestion
-The background ingestion pipeline executes on a configurable schedule (default: every 2 hours) inside the ASGI process lifespan:
-1. **Vertical Syndication**: Polls the GNews API v4 across four distinct categories (`nation`, `business`, `technology`, `general`).
-2. **Schema Normalization**: Parses disparate feeds into standardized `ArticleCreate` schemas with UTC timestamp normalization.
-3. **Idempotent Storage**: Executes SQL `INSERT ... ON CONFLICT (url) DO NOTHING` via SQLAlchemy Core, ensuring zero duplicate articles even across overlapping syndication runs.
-
-### PostgreSQL GIN Full-Text Search with Upstream Fallback
-SignalReport solves the "cold-start" and "local search exhaustion" problem through a two-tiered search engine:
+The frontend is constructed using **React 18**, **Vite**, and **Tailwind CSS**, designed under the **Swiss International Typographic Style** (asymmetric layouts, heavy grotesque typography, 2px architectural borders, and strict contrast).
 
 ```mermaid
 flowchart TD
-    Q[Analyst Submits Search Query] --> FTS[Execute PostgreSQL GIN Search]
-    FTS --> Check{Matches Found?}
-    Check -->|Matches >= 1| Return[Return Formatted Search Results]
-    Check -->|Matches == 0| Fallback[Trigger Upstream GNews API Fallback]
-    Fallback --> Ingest[Normalize & Ingest Remote Articles to PostgreSQL]
-    Ingest --> ReturnFresh[Return Live Upstream Articles to Analyst]
+    subgraph RootLevel ["Application Root & Routing"]
+        App["App.jsx (Client-Side History Router)"]
+        NetworkBanner["NetworkBanner.jsx (Offline Detection)"]
+        RootBoundary["SwissErrorBoundary (Module: APPLICATION_ROOT)"]
+        App --> NetworkBanner
+        App --> RootBoundary
+    end
+
+    subgraph Views ["Page Views & Dossiers"]
+        LoginView["LoginForm.jsx"]
+        RegisterView["RegisterForm.jsx"]
+        DashboardView["DashboardPage.jsx"]
+        ShareView["SharePage.jsx"]
+    end
+
+    subgraph DashboardComponents ["Dashboard Subsystem"]
+        Masthead["Masthead.jsx (Live Edition Clock & Controls)"]
+        CategoryFilter["CategoryFilter.jsx (01 ALL to 05 GENERAL)"]
+        HeroArticle["HeroArticle.jsx (Primary Lead Story)"]
+        ArticleGrid["ArticleGrid.jsx (Secondary Feed Grid)"]
+        BookmarksDrawer["BookmarksDrawer.jsx (Slide-Over Archive)"]
+        AiModal["AiAnalysisModal.jsx (Groq Briefing Dialog)"]
+    end
+
+    subgraph AtomicUI ["Swiss Modernist Design Tokens"]
+        SButton["SwissButton.jsx"]
+        SInput["SwissInput.jsx"]
+        SBadge["SwissBadge.jsx"]
+        SGrid["SwissGrid.jsx"]
+    end
+
+    subgraph DataLayer ["Data & Safety Layer"]
+        UseFeed["useNewsFeed.js (Abortable Keyed Feed Hook)"]
+        ApiClient["api.js (JWT Interceptor & 401 Silent Refresh)"]
+        Constants["constants.js (Frozen Routes & sanitizeUrl)"]
+    end
+
+    RootBoundary --> Views
+    DashboardView --> Masthead & CategoryFilter & HeroArticle & ArticleGrid & BookmarksDrawer & AiModal
+    HeroArticle & ArticleGrid --> AiModal
+    Views --> AtomicUI
+    DashboardView --> UseFeed
+    UseFeed --> ApiClient --> Constants
 ```
 
-1. **Local Search**: Queries a PostgreSQL Generalized Inverted Index (GIN) created over a generated `tsvector` column indexing article titles and descriptions.
-2. **Dynamic Fallback**: If the local search returns 0 results for an analyst's query, the service transparently queries the upstream news syndicate, persists the newly discovered articles to PostgreSQL, and returns the fresh intelligence in the same HTTP response.
+### Key Frontend Architectural Principles:
+1. **Zero External State Machine Bloat**: Eliminates Redux, MobX, and Zustand. State is cleanly managed using native React 18 primitives (`useState`, `useEffect`, `useCallback`, `useRef`).
+2. **Crash-Isolated Swiss Error Boundaries**: Subsystems (`IDENTITY_GATEWAY`, `INTELLIGENCE_DASHBOARD`, `SHARE_DOSSIER`) are wrapped in custom `SwissErrorBoundary` crash barriers, preventing a single component failure from cascading to the rest of the application.
+3. **Pure DOM Text Nodes**: 100% of article abstracts, titles, and AI summaries are rendered as native DOM text nodes. Zero occurrences of `dangerouslySetInnerHTML`.
+4. **Phishing & Scheme Sanitizer (`sanitizeUrl`)**: All outgoing hyperlinks undergo strict scheme verification (allowing only verified `http:` and `https:` protocols) and enforce `rel="noopener noreferrer"` with `target="_blank"`.
+5. **Optimistic UI Updates**: Bookmarking and read-history actions toggle immediately in the UI. If the underlying network request fails, the component automatically reverts state and surfaces a contextual error notice.
 
 ---
 
-## 🎨 Swiss Modernist Editorial Frontend
+## ⚙️ Backend Architecture
 
-The client interface draws direct inspiration from the **Swiss International Typographic Style** (Grid-oriented layouts, asymmetric compositions, high-contrast typography, and functional minimalism).
+The backend is built with **Django 5.0** and **Django REST Framework (DRF)**. To ensure complete separation of concerns and maximum explainability, the codebase is partitioned into **4 decoupled modular apps**:
 
-<div align="center">
-  <img src="docs_images/arch_frontend_gui.jpg" alt="SignalReport Swiss Editorial News Intelligence Dashboard GUI" width="95%" />
-  <p><em>Figure 4: Swiss Editorial News Intelligence Dashboard GUI</em></p>
-</div>
+```mermaid
+flowchart LR
+    subgraph AuthApp ["apps.authentication"]
+        direction TB
+        UserMod["User Model (AbstractUser)"]
+        JWTView["TokenObtainPair / Refresh"]
+        RegView["RegisterView (Instant Verification)"]
+        UserMod --> JWTView & RegView
+    end
 
-### Frontend Engineering Highlights
-* **Optimistic UI with Snapshot Rollback**: Interaction actions (bookmarking an article or marking it as read) update the user interface immediately. If the network request fails, the state manager automatically rolls back to the prior state snapshot and displays a contextual error notification.
-* **Cryptographic Article Sharing**: Analysts can generate shareable intelligence briefs. The backend generates a collision-resistant vanity token (`/share/:token`) that renders a clean, focused reading view accessible without authentication barriers.
-* **Responsive Editorial Layout**: Engineered with Tailwind CSS 3.4, featuring custom typographic scales, accessible contrast ratios, and dark/light ambient contrast states.
+    subgraph FeedApp ["apps.feed"]
+        direction TB
+        ArtMod["Article Model"]
+        BookMod["Bookmark Model"]
+        ReadMod["ArticleRead Model"]
+        FeedView["FeedView (Cursor Pagination)"]
+        ShareView["ShareArticleView (Vanity Tokens)"]
+        ArtMod --> FeedView & ShareView
+        BookMod & ReadMod --> FeedView
+    end
 
----
+    subgraph IngestApp ["apps.ingestion"]
+        direction TB
+        APILog["APICallLog Model"]
+        GNewsCli["GNewsClient (HTTPX)"]
+        QuotaSvc["check_quota() (80/day limit)"]
+        DaemonCmd["fetch_news Management Command"]
+        GNewsCli --> QuotaSvc --> APILog
+        DaemonCmd --> GNewsCli
+    end
 
-## 🛠️ Technology Stack
-
-| Layer | Technology | Version | Purpose & Rationale |
-|---|---|---|---|
-| **Application Runtime** | **Python** | `3.12+` | Modern type union syntax, performance optimizations, async task management. |
-| **API Framework** | **FastAPI** | `^0.111.0` | ASGI standard, native async routing, Pydantic v2 serialization, automated OpenAPI documentation. |
-| **Web Server (ASGI)** | **Uvicorn** | `^0.29.0` | High-throughput asynchronous server running the uvloop event loop. |
-| **Data Persistence** | **PostgreSQL** | `17 / 18` | ACID relational storage, GIN full-text search indexes (`tsvector`), JSONB metadata. |
-| **Async ORM Driver** | **SQLAlchemy + asyncpg** | `^2.0.0` / `^0.29.0` | Non-blocking async database pool, explicit transaction management, prepared statements. |
-| **Client Framework** | **React** | `^18.3.1` | Component-driven architecture, custom hooks, concurrent rendering. |
-| **Build Tool** | **Vite** | `^5.1.4` | Sub-second Hot Module Replacement (HMR) and optimized Rollup production bundling. |
-| **Styling** | **Tailwind CSS** | `^3.4.1` | Utility-first Swiss typographic styling and design token enforcement. |
-| **Testing Harness** | **pytest + Vitest** | `^8.0` / `^1.3` | Comprehensive async unit, integration, and security testing across both tiers. |
-
----
-
-## 📂 Repository Structure
-
-The codebase is organized into cleanly decoupled directories separating backend infrastructure from client assets:
-
-```
-SignalReport/
-├── backend/                             # Core FastAPI ASGI Application
-│   ├── app/
-│   │   ├── api/                         # API Routing & Dependency Injection
-│   │   │   ├── deps.py                  # Database session & JWT authentication guards
-│   │   │   └── v1/                      # Versioned route controllers
-│   │   │       ├── auth_login.py        # Login, token refresh, and logout endpoints
-│   │   │       ├── auth_register.py     # User registration and OTP verification
-│   │   │       ├── routes_bookmarks.py  # User bookmark collection management
-│   │   │       ├── routes_feed.py       # Paginated, category-filtered article feed
-│   │   │       ├── routes_reads.py      # Read-state history and tracking
-│   │   │       ├── routes_search.py     # Full-text search with upstream fallback
-│   │   │       └── routes_share.py      # Tokenized public article sharing
-│   │   ├── core/                        # System Configuration & Security Middleware
-│   │   │   ├── config.py                # Pydantic Settings with entropy validation
-│   │   │   ├── database.py              # Async engine & connection pool setup
-│   │   │   ├── scheduler.py             # In-process asyncio background news poller
-│   │   │   ├── security_headers.py      # HSTS, CSP, and X-Frame-Options middleware
-│   │   │   ├── security_proxy.py        # Cloudflare CIDR verification & real IP extraction
-│   │   │   └── security/                # Crypto primitives, rate limiter, email validator
-│   │   ├── models/                      # SQLAlchemy 2.0 Declarative Models
-│   │   │   ├── article.py               # Article schema with GIN tsvector index
-│   │   │   ├── interactions.py          # Bookmarks, ReadHistory, and SharedLinks
-│   │   │   ├── token.py                 # RefreshToken model for RTR tracking
-│   │   │   └── user.py                  # User entity with tokens_valid_after guard
-│   │   └── services/                    # Business Logic Layer
-│   │       ├── article_repository.py    # Idempotent database operations & search queries
-│   │       ├── email_service.py         # Transactional email and OTP dispatcher
-│   │       └── gnews_client.py          # HTTPX async client for syndicated news feeds
-│   ├── tests/                           # 29+ Comprehensive Backend Test Suites
-│   ├── requirements.txt                 # Pinned backend dependencies
-│   └── pyproject.toml                   # Python project metadata
-│
-├── frontend/                            # React 18 SPA (Vite + Tailwind)
-│   ├── src/
-│   │   ├── components/                  # Swiss Design Modular Components
-│   │   │   ├── auth/                    # Modal dialogs for login, registration, OTP
-│   │   │   ├── dashboard/               # News grid, navigation bar, filter pills
-│   │   │   └── ui/                      # Shared design-system atoms (cards, badges)
-│   │   ├── hooks/                       # Custom React Hooks
-│   │   │   ├── useArticleInteractions.js# Optimistic bookmarking & read status
-│   │   │   ├── useNewsFeed.js           # Feed pagination, category filtering, search
-│   │   │   └── useNetworkSync.js        # Connectivity and background re-validation
-│   │   ├── pages/                       # Route views (DashboardPage, SharePage)
-│   │   ├── styles/                      # Tailwind styles & typography tokens
-│   │   ├── App.jsx                      # Application root & authentication state
-│   │   └── main.jsx                     # DOM mount point
-│   ├── tests/                           # Vitest Unit & Integration Suites
-│   ├── package.json                     # Frontend dependencies & scripts
-│   └── vite.config.js                   # Vite config with API reverse proxy
-│
-├── docs_images/                         # High-Resolution Architectural Diagrams
-│   ├── arch_system_topology.jpg         # Infrastructure topology GUI
-│   ├── arch_data_pipeline.jpg           # News ingestion & NLP pipeline
-│   ├── arch_security_flow.jpg           # Defense-in-depth security blueprint
-│   └── arch_frontend_gui.jpg            # Swiss modernist dashboard view
-│
-├── SignalReport_Architecture_Report.pdf # 37-Page Formal Architectural Specification
-├── README.md                            # Project Documentation
-└── LICENSE                              # Apache 2.0 Open Source License
+    subgraph IntelApp ["apps.intelligence"]
+        direction TB
+        BanMod["LLMUsageBan Model"]
+        LogMod["LLMUsageLog Model"]
+        GroqSvc["Groq LLM Service (llama-3.3)"]
+        Fallback["_heuristic_fallback()"]
+        AnalyzeView["AnalyzeArticleView (3-Call Policy)"]
+        AnalyzeView --> LogMod & BanMod
+        AnalyzeView --> GroqSvc -.-> Fallback
+    end
 ```
 
----
+### Domain App Responsibilities:
 
-## 🚦 REST API Surface Reference
-
-All primary endpoints are mounted under the `/api/v1` prefix (with root-level fallback aliases for legacy compatibility):
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/health` | Public | System health check and uptime probe. |
-| `POST` | `/api/v1/auth/register` | Public | Register new user; dispatches email verification OTP. |
-| `POST` | `/api/v1/auth/verify-otp` | Public | Verify 6-digit OTP to activate user account. |
-| `POST` | `/api/v1/auth/login` | Public (Rate Limited) | Authenticate credentials; returns access token + sets refresh cookie. |
-| `POST` | `/api/v1/auth/refresh` | Cookie | Rotate refresh token and issue fresh 15-minute access token. |
-| `POST` | `/api/v1/auth/logout` | Authenticated | Invalidate refresh tokens and clear authentication cookies. |
-| `GET` | `/api/v1/feed` | Authenticated | Paginated article feed with category filters (`nation`, `business`, etc.). |
-| `GET` | `/api/v1/search` | Authenticated | Full-text search with automatic upstream syndication fallback. |
-| `GET` | `/api/v1/bookmarks` | Authenticated | Retrieve analyst's bookmarked intelligence items. |
-| `POST` | `/api/v1/bookmarks/{id}` | Authenticated | Bookmark an article (idempotent). |
-| `DELETE` | `/api/v1/bookmarks/{id}` | Authenticated | Remove an article from bookmarks. |
-| `GET` | `/api/v1/reads` | Authenticated | Retrieve history of analyzed articles. |
-| `POST` | `/api/v1/reads/{id}` | Authenticated | Mark an article as read. |
-| `POST` | `/api/v1/share/{id}` | Authenticated | Generate a cryptographically random public vanity share link. |
-| `GET` | `/api/v1/share/{token}` | Public | Access shared article brief by public token. |
-
-Interactive OpenAPI documentation is available locally at **`http://localhost:8000/docs`** (Swagger UI) and **`http://localhost:8000/redoc`** (ReDoc).
+| Modular Application | Primary Models | Primary Endpoints / Commands | Architectural Mandate |
+| :--- | :--- | :--- | :--- |
+| [**`apps.authentication`**](file:///c:/Users/skfir/Desktop/Project-1/backend/apps/authentication) | `User` | `/api/v1/auth/register`<br/>`/api/v1/auth/login`<br/>`/api/v1/auth/refresh`<br/>`/api/v1/auth/me` | Manages identity, JWT issuance, PBKDF2 password hashing, and login rate limiting. Activates users instantly with zero SMTP dependencies. |
+| [**`apps.feed`**](file:///c:/Users/skfir/Desktop/Project-1/backend/apps/feed) | `Article`<br/>`Bookmark`<br/>`ArticleRead` | `/api/v1/news/feed`<br/>`/api/v1/news/bookmarks/`<br/>`/api/v1/news/reads/`<br/>`/api/v1/news/share/<token>/` | Optimized for read throughput. Provides keyset cursor pagination, IDOR-safe bookmark toggles, and public dossier vanity tokens. |
+| [**`apps.ingestion`**](file:///c:/Users/skfir/Desktop/Project-1/backend/apps/ingestion) | `APICallLog` | `python manage.py fetch_news` | Manages upstream news syndication. Enforces an 80-call daily budget, 90-minute category cooldowns, and a 6-hour circuit breaker. |
+| [**`apps.intelligence`**](file:///c:/Users/skfir/Desktop/Project-1/backend/apps/intelligence) | `LLMUsageBan`<br/>`LLMUsageLog` | `/api/v1/news/analyze/` | Executes in-context Groq LLM synthesis. Limits users to 3 analysis calls before enforcing a 4-hour IP and account ban. |
 
 ---
 
-## 🏁 Quickstart & Local Development
+## 🔌 API Architecture
+
+The SignalReport API follows a strict RESTful contract. All endpoints return predictable JSON payloads with standard HTTP status codes.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Analyst as Analyst (Browser)
+    participant Gateway as Django Security Gateway
+    participant Intel as apps.intelligence
+    participant DB as PostgreSQL
+    participant Groq as Groq LPU API
+
+    Analyst->>Gateway: POST /api/v1/news/analyze/ (Bearer JWT, Payload)
+    Gateway->>Gateway: CloudflareProxy & SecurityHeaders Check
+    Gateway->>Intel: Dispatch to AnalyzeArticleView
+    
+    Intel->>DB: Query active ban (LLMUsageBan WHERE banned_until > now)
+    alt Active Ban Found (User or IP)
+        DB-->>Intel: Ban Record (banned_until: ISO8601)
+        Intel-->>Analyst: HTTP 429 Too Many Requests (Retry-After: N seconds)
+    else No Active Ban
+        Intel->>DB: Count recent requests in last 4 hours (LLMUsageLog)
+        DB-->>Intel: Count (e.g. 2 requests used)
+        
+        alt Count < 3 (Request Permitted)
+            Intel->>Groq: POST /chat/completions (model: llama-3.3-70b-versatile)
+            alt Upstream Groq OK
+                Groq-->>Intel: 200 OK (JSON Briefing)
+            else Groq Rate Limited or Offline
+                Intel->>Intel: Execute _heuristic_fallback()
+            end
+            
+            Intel->>DB: INSERT INTO llm_usage_logs
+            opt If this was Request #3
+                Intel->>DB: INSERT INTO llm_usage_bans (banned_until: now + 4h)
+            end
+            
+            Intel-->>Analyst: HTTP 200 OK (Briefing, requests_used: 3, requests_remaining: 0)
+        else Count >= 3 (Quota Exceeded)
+            Intel->>DB: INSERT INTO llm_usage_bans (banned_until: now + 4h)
+            Intel-->>Analyst: HTTP 429 Too Many Requests (Retry-After: 14400)
+        end
+    end
+```
+
+### Complete Endpoint Reference
+
+#### 1. Authentication Endpoints (`/api/v1/auth/`)
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/auth/register` | None | Registers an analyst account. Auto-verifies (`is_verified=True`). |
+| `POST` | `/api/v1/auth/login` | None | Validates credentials and returns JWT Access & Refresh tokens. |
+| `POST` | `/api/v1/auth/refresh` | None | Exchanges a valid Refresh token for a new Access token. |
+| `POST` | `/api/v1/auth/logout` | JWT | Invalidates the analyst's active session. |
+| `GET` | `/api/v1/auth/me` | JWT | Returns profile metadata for the authenticated analyst. |
+
+#### 2. Editorial News & Interactions (`/api/v1/news/`)
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/news/feed` | None / JWT | Returns paginated news feed filtered by category (`limit`, `cursor`). |
+| `GET` | `/api/v1/news/bookmarks/` | JWT | Lists all saved bookmarks belonging to the authenticated user. |
+| `POST` | `/api/v1/news/articles/<id>/bookmark/` | JWT | Toggles bookmark state for an article. |
+| `DELETE`| `/api/v1/news/bookmarks/<id>/` | JWT | Removes a bookmark (IDOR protected: owner only). |
+| `GET` | `/api/v1/news/reads/` | JWT | Retrieves read article history for the authenticated user. |
+| `POST` | `/api/v1/news/articles/<id>/read/` | JWT | Toggles read state for an article. |
+| `GET` | `/api/v1/news/share/<share_token>/` | None | Retrieves public, unauthenticated article dossier. |
+
+#### 3. AI Intelligence (`/api/v1/news/analyze/`)
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/news/analyze/` | None / JWT | Runs in-context Groq LLM synthesis. Bounded by a **3-call quota limit**, followed by a **4-hour cooldown ban**. Returns HTTP 429 when restricted. |
+
+#### 4. Health & System
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/health/` | None | Operational heartbeat returning `{ "status": "healthy" }`. |
+
+---
+
+## 🌟 Core Features
+
+### 1. In-Context Groq AI Synthesis
+- **Model**: `llama-3.3-70b-versatile` running on Groq's high-speed LPU infrastructure.
+- **Structured Briefing Output**: Produces standardized JSON with 4 distinct analytical dimensions:
+  - **Market Posture**: Directional sentiment (`BULLISH`, `BEARISH`, `VOLATILE`, `NEUTRAL`) with macroeconomic rationale.
+  - **Executive Takeaways**: 3–4 high-impact strategic bullet points.
+  - **Strategic Impact**: Macro risk and operational implications assessment.
+  - **Key Entities**: Extraction of mentioned sovereign, corporate, and regulatory entities.
+- **Fail-Safe Heuristic Fallback**: If the Groq API key is unconfigured or upstream limits are reached, a rule-based engine generates immediate briefings with zero downtime.
+
+### 2. Multi-Tier Quota & Cooldown Governance
+- **Groq Protection**:
+  - Each client IP and user account is allocated **3 analysis requests**.
+  - Upon making the 3rd request, the system registers an `LLMUsageBan` in PostgreSQL, locking out the user/IP from AI analysis for **4 hours**.
+  - Subsequent requests return `HTTP 429 Too Many Requests` with a calculated `Retry-After` header.
+- **GNews Protection**:
+  - Capped at **80 daily requests** (reserving 20 requests from the 100/day hard limit as a safety buffer).
+  - 90-minute per-category cooldown prevents redundant requests.
+  - Upstream 429 responses trigger a 6-hour pause.
+
+### 3. Public Shareable Dossiers
+- Analysts can generate public, shareable links for any news dispatch.
+- Uses a 12-character cryptographic vanity token (e.g., `/share/e4a1b8c9d2f0`).
+- Dossiers can be viewed by external stakeholders without an account or login barrier.
+
+### 4. Zero-Overhead Background News Ingestion
+- Standalone Django management command: `python manage.py fetch_news --daemon --interval 30`.
+- Rotates across all four categories every 30 minutes, totaling **48 calls/day** (well below the 80-call budget).
+- Does not require Redis, Celery, or background worker infrastructure.
+
+---
+
+## 🛡️ Security Architecture
+
+SignalReport enforces a **Multi-Layered Defense-in-Depth** model:
+
+```
+[Layer 1: Edge & Network]  ──► Cloudflare IP Socket CIDR Verification
+                                 │
+[Layer 2: Perimeter HTTP]  ──► HSTS (31536000s) + CSP + nosniff + DENY
+                                 │
+[Layer 3: Brute-Force]     ──► Sliding-Window Login Rate Limiting (5 req / 60s)
+                                 │
+[Layer 4: Access Control]  ──► Zero-Trust IDOR Scoping (user=request.user)
+                                 │
+[Layer 5: AI & Quota]      ──► 4.5k-Char Prompt Bounds + 3-Call Limit + 4h Ban
+                                 │
+[Layer 6: DOM & Links]     ──► Pure Text DOM Nodes + rel="noopener noreferrer"
+```
+
+1. **Perimeter & Proxy Integrity (`CloudflareProxyMiddleware`)**:
+   - Parses `CF-Connecting-IP` **only** when the immediate TCP socket originates from trusted Cloudflare IP ranges.
+   - Drops untrusted proxy headers from public internet clients, eliminating IP spoofing attacks.
+
+2. **HTTP Hardening (`SecurityHeadersMiddleware`)**:
+   - Every outgoing response includes strict OWASP-recommended headers:
+     ```http
+     Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+     Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'
+     X-Frame-Options: DENY
+     X-Content-Type-Options: nosniff
+     Referrer-Policy: strict-origin-when-cross-origin
+     ```
+
+3. **Brute-Force Rate Limiting (`LoginRateLimitMiddleware`)**:
+   - Intercepts `POST /api/v1/auth/login`.
+   - Restricts clients to a maximum of 5 failed attempts per 60 seconds per IP, blocking credential stuffing.
+
+4. **Cryptographic Authentication**:
+   - Passwords hashed using Django's PBKDF2 implementation with SHA-256 (390,000 iterations).
+   - Ephemeral JWT Access tokens paired with refresh rotation.
+
+5. **Resource Bounding & Prompt Injection Defense**:
+   - Article content sent to the Groq API is hard-clamped to a maximum of **4,500 characters**.
+   - Mitigates prompt injection vectors and prevents token limit exhaustion.
+
+6. **Zero-Trust IDOR Prevention**:
+   - Bookmark and reading history queries are strictly scoped to the authenticated user (`filter(user=request.user)`).
+   - Users cannot view, modify, or delete another user's saved data.
+
+---
+
+## 🚀 Quickstart & Local Development
 
 ### Prerequisites
-* **Python**: `3.12+`
-* **Node.js**: `18.0+` (or LTS)
-* **PostgreSQL**: `16+` (Running locally or in Docker)
-* **GNews API Key**: (Free tier available at [gnews.io](https://gnews.io))
+- **Python**: 3.10, 3.11, or 3.12
+- **Node.js**: 18+ and npm
+- **PostgreSQL**: 15, 16, or 17
 
----
-
-### Step 1: Clone the Repository
-```bash
-git clone https://github.com/SHAIK-FIRDOS-01/SignalReport-Enterprise-AI-News-Analyst.git
-cd SignalReport-Enterprise-AI-News-Analyst
+### 1. Database Setup
+Create the PostgreSQL database:
+```sql
+CREATE DATABASE signalreport;
 ```
 
----
-
-### Step 2: Configure Environment Variables
-
-Create a `.env` file in the `backend/` directory:
-
-```ini
-# backend/.env
-
-# Database connection string (asyncpg driver)
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/signalreport
-
-# Cryptographic secret (must be at least 32 characters / 256 bits)
-JWT_SECRET_KEY=replace_with_a_cryptographically_secure_key_of_32_bytes_or_more
-
-# Ingestion configuration
-GNEWS_API_KEY=your_gnews_api_key_here
-ENABLE_SCHEDULER=false
-
-# Security & CORS
-CORS_ORIGINS=["http://localhost:5173", "http://localhost:8000"]
-COOKIE_SECURE=False
-COOKIE_SAMESITE=lax
-```
-
----
-
-### Step 3: Launch the Backend Service
-
-```bash
+### 2. Backend Configuration & Startup
+```powershell
+# Navigate to backend directory
 cd backend
 
 # Create and activate virtual environment
 python -m venv .venv
-# On Windows:
-.venv\Scripts\activate
-# On Linux/macOS:
-# source .venv/bin/activate
+.\.venv\Scripts\Activate.ps1
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the FastAPI ASGI server with auto-reload
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-The API is now live at `http://127.0.0.1:8000`. Test service health with:
-```bash
-curl http://127.0.0.1:8000/health
-# {"status": "healthy"}
+# Run migrations
+python manage.py migrate
+
+# Start development server
+python manage.py runserver 127.0.0.1:8000
 ```
 
----
+### 3. Background News Ingestion (Daemon)
+In a separate terminal window:
+```powershell
+cd backend
+python manage.py fetch_news --daemon --interval 30
+```
 
-### Step 4: Launch the Frontend Client
-
-In a separate terminal:
-
-```bash
+### 4. Frontend Configuration & Startup
+In a separate terminal window:
+```powershell
+# Navigate to frontend directory
 cd frontend
 
-# Install client packages
+# Install dependencies
 npm install
 
-# Start the Vite development server (proxies /api to localhost:8000)
+# Start Vite development server
 npm run dev
 ```
-
-Open your browser and navigate to **`http://localhost:5173`**.
+Open **`http://localhost:5173`** in your browser.
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🧪 Testing & Verification
 
-SignalReport incorporates rigorous testing across unit, integration, and security domains.
+Both the backend and frontend include automated test suites:
 
-```bash
-# Run the entire backend test suite (29+ test modules)
+### Run Backend Tests (Django)
+```powershell
 cd backend
-pytest -v
+python manage.py test --noinput
+```
+*Executes 33 comprehensive unit and security tests across `authentication`, `feed`, `ingestion`, and `intelligence`.*
 
-# Run security-specific audits (IDOR, header injection, rate limit evasion)
-pytest tests/test_security_audit.py tests/test_security_idor.py tests/test_login_rotation.py -v
-
-# Run frontend test suite
-cd ../frontend
+### Run Frontend Tests (Vitest)
+```powershell
+cd frontend
 npm test
 ```
+*Executes 132 tests across 25 component, integration, and security suites.*
 
-### Verified Test Domains
-* **Authentication & Token Rotation**: Tests Refresh Token Rotation (RTR) mechanics, reuse detection, and global revocation via `tokens_valid_after`.
-* **In-Flight Disconnection & Edge Cases**: Validates database rollback and connection pool return when clients disconnect prematurely.
-* **Security & IDOR Auditing**: Ensures analysts cannot read, bookmark, or modify articles belonging to other identities.
-* **Proxy Header Tampering**: Validates that forged `X-Forwarded-For` or `CF-Connecting-IP` headers from untrusted socket addresses are rejected.
-
----
-
-## 📄 Architectural Report & Engineering Artifacts
-
-For senior developers and engineering architects seeking an exhaustive systems breakdown, this repository includes the complete publication-grade formal specification:
-
-* 📑 **[`SignalReport_Architecture_Report.pdf`](SignalReport_Architecture_Report.pdf)**: A 37-page document covering mathematical throughput models, connection pool saturation proofs, security state machines, and complete schema DDL.
+### Run Production Build
+```powershell
+cd frontend
+npm run build
+```
+*Compiles the production bundle with Vite in ~1.2 seconds.*
 
 ---
 
-## 📜 License
+## 📄 License
 
-This project is open-source software licensed under the **[Apache License 2.0](LICENSE)**.
-
----
-
-<div align="center">
-
-Crafted with precision by **[Shaik Firdos](https://github.com/SHAIK-FIRDOS-01)**  
-*Building resilient, high-throughput systems and intelligence pipelines.*
-
-</div>
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.

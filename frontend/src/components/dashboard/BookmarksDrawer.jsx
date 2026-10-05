@@ -70,7 +70,7 @@ export function BookmarksDrawer({
               SAVED DISPATCHES // ARCHIVE
             </h2>
             <p className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-500">
-              RETAINED INTELLIGENCE DOSSIERS ({items.length})
+              SAVED SIGNALREPORT ARTICLES ({items.length})
             </p>
           </div>
 
@@ -102,7 +102,7 @@ export function BookmarksDrawer({
                 >
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-mono text-neutral-500 uppercase mb-1">
-                      <span>{prefix} // DOSSIER</span>
+                      <span>{prefix} // SIGNALREPORT</span>
                       <span>{article.source || 'WIRE'}</span>
                     </div>
 

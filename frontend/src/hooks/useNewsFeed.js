@@ -91,9 +91,9 @@ export function useNewsFeed({
       setIsLoading(true);
       setError(null);
 
-      const trimmedQuery = query.trim();
-      const endpoint = trimmedQuery
-        ? `${API_ROUTES.NEWS.SEARCH}?q=${encodeURIComponent(trimmedQuery)}`
+      const isSearch = Boolean(query && query.trim());
+      const endpoint = isSearch
+        ? `${API_ROUTES.NEWS.SEARCH}?q=${encodeURIComponent(query.trim())}&limit=${limit}`
         : `${API_ROUTES.NEWS.FEED}?limit=${limit}${category === 'ALL' ? '' : `&category=${category.toLowerCase()}`}`;
 
       try {
@@ -105,11 +105,11 @@ export function useNewsFeed({
         );
 
         if (!isCancelled && !controller.signal.aborted) {
-          const fetchedArticles = data?.articles || (Array.isArray(data) ? data : []);
+          const fetchedArticles = data?.items || data?.articles || (Array.isArray(data) ? data : []);
           setArticles(fetchedArticles);
           setHasMore(Boolean(data?.has_more));
           setCursor(data?.next_cursor || null);
-          setSearchOrigin(data?.origin || (trimmedQuery ? 'SEARCH' : null));
+          setSearchOrigin(data?.origin || null);
           setIsLoading(false);
         }
       } catch (err) {
@@ -122,6 +122,7 @@ export function useNewsFeed({
         setError(err);
         setHasMore(false);
         setCursor(null);
+        setSearchOrigin(null);
         setIsLoading(false);
       }
     }
@@ -145,7 +146,7 @@ export function useNewsFeed({
       const endpoint = `${API_ROUTES.NEWS.FEED}?limit=${limit}&cursor=${cursor}${categoryParam}`;
       const data = await api(endpoint);
 
-      const nextArticles = data?.articles || (Array.isArray(data) ? data : []);
+      const nextArticles = data?.items || data?.articles || (Array.isArray(data) ? data : []);
       setArticles((prev) => [...prev, ...nextArticles]);
       setHasMore(Boolean(data?.has_more));
       setCursor(data?.next_cursor || null);

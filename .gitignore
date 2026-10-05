@@ -121,8 +121,14 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env
+.env.*
+!.env.example
 backend/.env
+!backend/.env.example
 backend/venv/
+backend/.venv/
+.venv/
 
 # Spyder project settings
 .spyderproject
@@ -194,6 +200,7 @@ backend/tests/
 !README.*.md
 !AGENTS.md
 !LICENSE.md
+!Error.md
 
 # PDF generation build artifacts
 mermaid.min.js

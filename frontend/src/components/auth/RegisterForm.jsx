@@ -90,10 +90,10 @@ export function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
     <form onSubmit={handleSubmit} className="flex flex-col space-y-4" noValidate>
       <div className="border-b-2 border-swiss-black pb-3 mb-2">
         <h2 className="text-2xl font-black uppercase tracking-tight text-swiss-black">
-          OPERATOR REGISTRATION
+          CREATE ANALYST ACCOUNT
         </h2>
         <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          PROVISION NEW CREDENTIAL
+          REGISTER FOR EDITORIAL ACCESS
         </p>
       </div>
 
@@ -108,9 +108,9 @@ export function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
 
       <SwissInput
         id="register-email"
-        label="01 / EMAIL IDENTIFIER"
+        label="01 / EMAIL ADDRESS"
         type="email"
-        placeholder="OPERATOR@DISPATCH.CH"
+        placeholder="analyst@signalreport.io"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         error={errors.email}
@@ -120,7 +120,7 @@ export function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
 
       <SwissInput
         id="register-password"
-        label="02 / PASSWORD (PASSPHRASE)"
+        label="02 / PASSWORD"
         type="password"
         placeholder="••••••••••••••••"
         value={password}
@@ -137,7 +137,7 @@ export function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
           disabled={isSubmitting}
           className="w-full h-12"
         >
-          {isSubmitting ? 'ENCRYPTING & REGISTERING...' : 'REGISTER OPERATOR →'}
+          {isSubmitting ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT →'}
         </SwissButton>
 
         {onSwitchToLogin && (
@@ -146,7 +146,7 @@ export function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
             onClick={onSwitchToLogin}
             className="text-xs font-bold uppercase tracking-wider text-swiss-black hover:underline text-left select-none"
           >
-            EXISTING OPERATOR? // SIGN IN →
+            ALREADY REGISTERED? // SIGN IN →
           </button>
         )}
       </div>

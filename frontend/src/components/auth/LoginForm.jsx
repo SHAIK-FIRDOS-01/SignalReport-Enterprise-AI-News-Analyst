@@ -32,7 +32,7 @@ export function LoginForm({ onLoginSuccess, onSwitchToRegister }) {
     if (isSubmitting || lockoutSeconds > 0) return;
 
     if (!email.trim() || !password) {
-      setError('PLEASE ENTER BOTH OPERATOR EMAIL AND PASSPHRASE');
+      setError('PLEASE ENTER BOTH EMAIL AND PASSWORD');
       return;
     }
 
@@ -40,7 +40,7 @@ export function LoginForm({ onLoginSuccess, onSwitchToRegister }) {
     setError('');
 
     try {
-      await api(API_ROUTES.AUTH.LOGIN, {
+      const data = await api(API_ROUTES.AUTH.LOGIN, {
         method: 'POST',
         body: {
           email: email.trim().toLowerCase(),
@@ -49,13 +49,13 @@ export function LoginForm({ onLoginSuccess, onSwitchToRegister }) {
       });
 
       if (typeof onLoginSuccess === 'function') {
-        onLoginSuccess();
+        onLoginSuccess(data?.user || { email: email.trim().toLowerCase() });
       }
     } catch (err) {
       if (err.status === 429) {
         const retry = typeof err.retryAfter === 'number' && err.retryAfter > 0 ? err.retryAfter : 900;
         setLockoutSeconds(retry);
-        setError('RATE LIMIT EXCEEDED. TEMPORARY TERMINAL LOCKOUT.');
+        setError('RATE LIMIT EXCEEDED. TEMPORARY ACCOUNT LOCKOUT.');
       } else {
         setError(err.detail || err.message || 'AUTHENTICATION FAILED');
       }
@@ -72,10 +72,10 @@ export function LoginForm({ onLoginSuccess, onSwitchToRegister }) {
     <form onSubmit={handleSubmit} className="flex flex-col space-y-4" noValidate>
       <div className="border-b-2 border-swiss-black pb-3 mb-2">
         <h2 className="text-2xl font-black uppercase tracking-tight text-swiss-black">
-          OPERATOR ACCESS
+          ANALYST SIGN IN
         </h2>
         <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          ENTER TERMINAL CREDENTIALS
+          ENTER YOUR CREDENTIALS
         </p>
       </div>
 
@@ -103,9 +103,9 @@ export function LoginForm({ onLoginSuccess, onSwitchToRegister }) {
 
       <SwissInput
         id="login-email"
-        label="01 / OPERATOR EMAIL"
+        label="01 / EMAIL ADDRESS"
         type="email"
-        placeholder="OPERATOR@DISPATCH.CH"
+        placeholder="analyst@signalreport.io"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         disabled={isSubmitting || lockoutSeconds > 0}
@@ -114,7 +114,7 @@ export function LoginForm({ onLoginSuccess, onSwitchToRegister }) {
 
       <SwissInput
         id="login-password"
-        label="02 / PASSPHRASE (PASSWORD)"
+        label="02 / PASSWORD"
         type="password"
         placeholder="••••••••••••••••"
         value={password}
@@ -143,7 +143,7 @@ export function LoginForm({ onLoginSuccess, onSwitchToRegister }) {
             onClick={onSwitchToRegister}
             className="text-xs font-bold uppercase tracking-wider text-swiss-black hover:underline text-left select-none"
           >
-            NO OPERATOR ACCOUNT? // REGISTER →
+            NO ACCOUNT YET? // REGISTER →
           </button>
         )}
       </div>
